@@ -3,14 +3,16 @@ import os
 import shutil
 import subprocess
 import time
+import sys
 
 def verify_extraction():
+    candidate_id = sys.argv[1] if len(sys.argv) > 1 else 'CandidateID'
     tmp_dir = os.path.join(os.environ['TEMP'], 'CleanWorkbenchTest')
     if os.path.exists(tmp_dir):
         shutil.rmtree(tmp_dir, ignore_errors=True)
     os.makedirs(tmp_dir, exist_ok=True)
 
-    zip_path = os.path.abspath('release/CandidateID_Workbench.zip')
+    zip_path = os.path.abspath(f'release/{candidate_id}_Workbench.zip')
     print(f"Testing extraction from: {zip_path}")
     print(f"Target scratch directory: {tmp_dir}")
 
@@ -50,6 +52,22 @@ def verify_extraction():
     if p2.returncode != 0:
         print(f"[FAIL] Launch.exe failed with code {p2.returncode}")
         return False
+
+    # Check essential directories and files
+    required_entries = ['data', 'docs', 'src', 'tests', 'results', 'CMakeLists.txt', 'README.md', 'FINAL_SUBMISSION_GATE.md']
+    for entry in required_entries:
+        path = os.path.join(tmp_dir, entry)
+        if not os.path.exists(path):
+            print(f"[FAIL] Required deliverable entry missing: {entry}")
+            return False
+        print(f"[PASS] Found required deliverable entry: {entry}")
+
+    # Check for handwritten appendix scan
+    appendix_pdf = os.path.join(tmp_dir, 'docs', 'appendix', 'HANDWRITTEN_APPENDIX_SCAN.pdf')
+    if os.path.exists(appendix_pdf):
+        print(f"[PASS] Found handwritten appendix scan: docs/appendix/HANDWRITTEN_APPENDIX_SCAN.pdf ({os.path.getsize(appendix_pdf)} bytes)")
+    else:
+        print(f"[INFO] Handwritten appendix scan docs/appendix/HANDWRITTEN_APPENDIX_SCAN.pdf not present in archive (pending candidate scan).")
 
     # Check repository_bundle.bundle
     bundle = os.path.join(tmp_dir, 'repository_bundle.bundle')
