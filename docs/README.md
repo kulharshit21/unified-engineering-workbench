@@ -42,6 +42,11 @@ docs/
 │   └── FINAL_TECHNICAL_REPORT.pdf           # Print-ready compiled 6-page PDF report
 ├── audits/
 │   └── FINAL_INDEPENDENT_AUDIT.md           # Independent zero-fabrication audit of previous claims
+├── appendix/
+│   ├── README.md                            # Handwritten appendix scanning status & instructions
+│   └── HANDWRITTEN_APPENDIX_GUIDE.md        # 2-page candidate notebook transcription guide
+├── DEMO_WALKTHROUGH.md                      # Timestamped interactive operator walkthrough & receipts
+├── COMMIT_LOG.txt                           # Full Git commit history log
 └── RELEASE_AND_LIMITATIONS.md               # Standalone packaging guide, release checklist & limitations
 ```
 

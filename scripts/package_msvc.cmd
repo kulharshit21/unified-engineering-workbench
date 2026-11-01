@@ -38,14 +38,13 @@ call "%VSVARS%" >nul 2>&1
 
 rem 5. Copy MSVC Runtime Redistributables
 echo [PACKAGE] Deploying MSVC CRT Redistributable DLLs...
-set REDIST_DIR=C:\Program Files\Microsoft Visual Studio\18\Community\VC\Redist\MSVC\14.51.36231\x64\Microsoft.VC143.CRT
+set REDIST_DIR=C:\Program Files\Microsoft Visual Studio\18\Community\VC\Redist\MSVC\14.51.36231\x64\Microsoft.VC145.CRT
+if not exist "%REDIST_DIR%" set REDIST_DIR=C:\Program Files\Microsoft Visual Studio\18\Community\VC\Redist\MSVC\14.51.36231\x64\Microsoft.VC143.CRT
 if exist "%REDIST_DIR%" (
-    copy /y "%REDIST_DIR%\msvcp140.dll" "%DISTDIR%\bin\"
-    copy /y "%REDIST_DIR%\vcruntime140.dll" "%DISTDIR%\bin\"
-    copy /y "%REDIST_DIR%\vcruntime140_1.dll" "%DISTDIR%\bin\"
+    copy /y "%REDIST_DIR%\*.dll" "%DISTDIR%\bin\"
 ) else (
-    copy /y "C:\Windows\System32\msvcp140.dll" "%DISTDIR%\bin\"
-    copy /y "C:\Windows\System32\vcruntime140.dll" "%DISTDIR%\bin\"
+    copy /y "C:\Windows\System32\msvcp140*.dll" "%DISTDIR%\bin\"
+    copy /y "C:\Windows\System32\vcruntime140*.dll" "%DISTDIR%\bin\"
 )
 
 rem 6. Copy source, documentation, test data, and configurations
@@ -54,6 +53,7 @@ if exist "%ROOTDIR%\data" xcopy /e /i /y "%ROOTDIR%\data" "%DISTDIR%\data"
 if exist "%ROOTDIR%\docs" xcopy /e /i /y "%ROOTDIR%\docs" "%DISTDIR%\docs"
 if exist "%ROOTDIR%\src" xcopy /e /i /y "%ROOTDIR%\src" "%DISTDIR%\src"
 if exist "%ROOTDIR%\tests" xcopy /e /i /y "%ROOTDIR%\tests" "%DISTDIR%\tests"
+if exist "%ROOTDIR%\scripts" xcopy /e /i /y "%ROOTDIR%\scripts" "%DISTDIR%\scripts"
 if exist "%ROOTDIR%\results" xcopy /e /i /y "%ROOTDIR%\results" "%DISTDIR%\results"
 if exist "%ROOTDIR%\.vscode" xcopy /e /i /y "%ROOTDIR%\.vscode" "%DISTDIR%\.vscode"
 copy /y "%ROOTDIR%\CMakeLists.txt" "%DISTDIR%\"

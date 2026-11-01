@@ -151,6 +151,10 @@ All architectural specifications, mathematical derivations, defect logs, and aud
 | **Licenses** | [`docs/development/DEPENDENCIES_AND_LICENSES.md`](docs/development/DEPENDENCIES_AND_LICENSES.md) | Open-source licensing disclosures, LGPLv3 dynamic linking compliance |
 | **Final Report** | [`docs/reports/FINAL_TECHNICAL_REPORT.pdf`](docs/reports/FINAL_TECHNICAL_REPORT.pdf) | Formal 5-page submission report compiled with high-resolution figures |
 | **Audit Matrix** | [`docs/audits/FINAL_INDEPENDENT_AUDIT.md`](docs/audits/FINAL_INDEPENDENT_AUDIT.md) | Independent zero-fabrication audit of previous claims & corrective actions |
+| **Walkthrough** | [`docs/DEMO_WALKTHROUGH.md`](docs/DEMO_WALKTHROUGH.md) | Timestamped interactive operator walkthrough, receipts & embedded screenshots |
+| **Handwritten Guide** | [`docs/appendix/HANDWRITTEN_APPENDIX_GUIDE.md`](docs/appendix/HANDWRITTEN_APPENDIX_GUIDE.md) | 2-page candidate handwritten notebook transcription template |
+| **Appendix Scan** | [`docs/appendix/README.md`](docs/appendix/README.md) | Handwritten appendix deliverable status (`PENDING EXTERNAL INPUT`) |
+| **Commit Log** | [`docs/COMMIT_LOG.txt`](docs/COMMIT_LOG.txt) | Human-readable Git commit history log |
 | **Release Specs** | [`docs/RELEASE_AND_LIMITATIONS.md`](docs/RELEASE_AND_LIMITATIONS.md) | Packaging pipeline, pre-release checklist, technical limitations |
 
 ---
