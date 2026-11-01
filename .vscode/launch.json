@@ -1,0 +1,28 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Launch Unified Workbench (Release)",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/Release/bin/WorkbenchApp.exe",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/build/Release/bin",
+      "environment": [],
+      "console": "internalConsole",
+      "preLaunchTask": "Build Workbench (Release)"
+    },
+    {
+      "name": "Run Packaged Launch.exe",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/dist/UnifiedEngineeringWorkbench/Launch.exe",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/dist/UnifiedEngineeringWorkbench",
+      "environment": [],
+      "console": "internalConsole"
+    }
+  ]
+}

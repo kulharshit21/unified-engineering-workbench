@@ -6,6 +6,8 @@ out/
 bin/
 obj/
 *.dir/
+dist/
+release/
 
 # Generated binaries and intermediate files
 *.exe

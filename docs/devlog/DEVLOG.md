@@ -30,3 +30,31 @@
 * **Successes**: Complete toolchain ready in < 5 minutes without administrative escalation.
 * **Failures & Fixes**: Sourced `vcvars64.bat` to resolve missing `cl.exe` in standard PowerShell session (see `DEF-001`).
 * **Next Step**: Create Phase 1 minimal C++/Qt application, root `Launch.exe` wrapper, and build scripts.
+
+---
+
+## Milestone 1: Minimal Application, Build Automation & Standalone Packaging Pipeline
+* **Timestamp**: 2026-11-01 19:55 IST
+* **Phase**: Phase 1 — Minimal Application + Release Skeleton
+* **Objective**: Establish CMake architecture, pure C++ core library target, Qt 6 Widgets GUI target, CTest runner, native Win32 `Launch.exe` wrapper, build/test/package scripts, and verify standalone execution.
+* **Files Created / Modified**:
+  * `CMakeLists.txt`, `CMakePresets.json`
+  * `src/core/CoreVersion.hpp`
+  * `src/app/main.cpp`, `src/app/widgets/MainWindow.hpp`, `src/app/widgets/MainWindow.cpp`
+  * `packaging/Launch.cpp`
+  * `tests/unit/test_smoke.cpp`
+  * `scripts/build_msvc.cmd`, `scripts/test_msvc.cmd`, `scripts/package_msvc.cmd`
+  * `.vscode/launch.json`, `.vscode/tasks.json`
+* **Architecture Decisions**:
+  * Native Win32 `Launch.exe` with zero runtime dependencies delegates to `bin/WorkbenchApp.exe` without spawning terminal window.
+  * Native CMD scripts for rock-solid batch execution across developer command prompts.
+* **Execution Commands**:
+  * `cmd.exe /c ".\scripts\build_msvc.cmd Release"`
+  * `cmd.exe /c ".\scripts\test_msvc.cmd Release"`
+  * `cmd.exe /c ".\scripts\package_msvc.cmd CandidateID"`
+* **Real Test Results**:
+  * Build succeeded in 9.2s using MSVC 19.51 and Ninja (16 compilation units).
+  * Smoke test passed via CTest: 100% tests passed.
+  * Packaging created `dist/UnifiedEngineeringWorkbench` (28.98 MB compressed ZIP with SHA256 checksum).
+  * Standalone launch smoke test passed: `Launch.exe` spawned `WorkbenchApp.exe` (verified PID 19164) from outside build tree.
+* **Next Step**: Implement Task C — Verified 1D Steady-State Thermal Finite-Element Solver with Thomas algorithm, exact analytical benchmark, and midpoint mesh convergence.
