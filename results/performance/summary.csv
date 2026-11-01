@@ -1,0 +1,4 @@
+workers_p,case_count,mesh_N,median_time_ms,mean_time_ms,min_time_ms,max_time_ms,speedup_T1_over_Tp,efficiency
+1,1000,80,1.8989,1.9025,1.8294,1.9732,1.0000,1.0000
+2,1000,80,1.5447,1.5257,1.2668,1.7354,1.2293,0.6147
+4,1000,80,0.8940,0.9464,0.8154,1.1263,2.1240,0.5310

@@ -116,3 +116,34 @@
   * Negative CSV tests passed: empty CSV, malformed header, non-numeric values, NaN values, duplicate IDs, and degenerate ranges correctly handled.
   * 4/4 CTest suites passed 100%.
 * **Next Step**: Implement Task D — Multicore Parallel Batch Thermal Solves, Thread Pool, and Benchmarking Engine.
+
+---
+
+## Milestone 4: Multicore Parallel Batch Solves, ThreadPool & Benchmark Suite
+* **Timestamp**: 2026-11-01 20:07 IST
+* **Phase**: Phase 4 — Multicore Performance (Task D)
+* **Objective**: Implement bounded `ThreadPool`, reproducible batch generator with fixed RNG seed ($k, q$ randomized), serial baseline solve, CPU-parallel batch solve, 5 repetitions, median timing, speedup $S_p$, efficiency $E_p$, and serial/parallel agreement verification ($\le 10^{-8\circ}\text{C}$).
+* **Files Created / Modified**:
+  * `src/core/parallel/ThreadPool.hpp`
+  * `src/core/parallel/BatchCase.hpp`
+  * `src/core/parallel/BatchSolver.hpp`, `src/core/parallel/BatchSolver.cpp`
+  * `src/core/parallel/BenchmarkEngine.hpp`, `src/core/parallel/BenchmarkEngine.cpp`
+  * `tests/integration/test_parallel_batch.cpp`
+  * `docs/PERFORMANCE_METHODOLOGY.md`, `docs/PERFORMANCE_RESULTS.md`
+  * `results/performance/raw_timings.csv`, `results/performance/summary.csv`, `results/performance/agreement.csv`
+* **Architecture Decisions**:
+  * Bounded worker pool using standard C++17 `std::thread`, mutex, condition variables.
+  * Deterministic pre-allocated chunking to minimize lock contention.
+  * Deterministic case output indexing strictly ordered by `caseId`.
+* **Execution Commands**:
+  * `cmd.exe /c ".\scripts\build_msvc.cmd Release"`
+  * `cmd.exe /c ".\scripts\test_msvc.cmd Release"`
+* **Real Test Results**:
+  * Workload: 1,000 independent cases, $N=80$ elements each, Seed = 42.
+  * Measured Medians on Ryzen AI 9 HX 370:
+    * 1 Worker: $1.8989\text{ ms}$ (Speedup $1.00\times$, Efficiency $1.00$)
+    * 2 Workers: $1.5447\text{ ms}$ (Speedup $1.23\times$, Efficiency $0.61$)
+    * 4 Workers: $0.8940\text{ ms}$ (Speedup $2.12\times$, Efficiency $0.53$)
+  * Numerical Agreement: Max absolute delta between serial and 4-worker parallel is $0.0000\times 10^{-15\circ}\text{C}$ (well below $10^{-8\circ}\text{C}$ threshold).
+  * 5/5 automated CTest targets passed 100%.
+* **Next Step**: Implement Task E — Host-Connected Embedded System Integration Design and C++ Mock Device Adapters.
