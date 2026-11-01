@@ -47,6 +47,7 @@ int main() {
     assert(mcu->getStatus() == ConnectionStatus::Disconnected);
     bool connOk = manager.connectAll();
     assert(connOk);
+    (void)connOk;
     assert(mcu->getStatus() == ConnectionStatus::Connected);
     assert(fpga->getStatus() == ConnectionStatus::Connected);
     assert(jtag->getStatus() == ConnectionStatus::Connected);
@@ -90,6 +91,7 @@ int main() {
     fpga->clearFault();
     bool recovered = manager.attemptRecovery("FPGA-ARTY-A7-002", 3);
     assert(recovered);
+    (void)recovered;
     assert(fpga->getStatus() == ConnectionStatus::Connected);
     auto recoveredTelem = fpga->readTelemetry(250);
     assert(recoveredTelem.valid);

@@ -1,0 +1,184 @@
+#include "PerformanceView.hpp"
+#include <QHBoxLayout>
+#include <QVBoxLayout>
+#include <QFormLayout>
+#include <QGroupBox>
+#include <QHeaderView>
+#include <QFileDialog>
+#include <QMessageBox>
+#include <QApplication>
+#include <thread>
+#include <fstream>
+
+namespace Workbench::App {
+
+PerformanceView::PerformanceView(QWidget *parent)
+    : QWidget(parent) {
+    setupUi();
+    // Run an initial quick benchmark on load
+    onRunBenchmarkClicked();
+}
+
+void PerformanceView::setupUi() {
+    auto *mainLayout = new QHBoxLayout(this);
+    mainLayout->setContentsMargins(12, 12, 12, 12);
+    mainLayout->setSpacing(12);
+
+    // Left controls and table panel
+    auto *leftPanel = new QWidget(this);
+    leftPanel->setFixedWidth(460);
+    auto *leftLayout = new QVBoxLayout(leftPanel);
+    leftLayout->setContentsMargins(0, 0, 0, 0);
+    leftLayout->setSpacing(10);
+
+    // 1. Benchmark Configuration Box
+    auto *configBox = new QGroupBox("Multicore Benchmark Setup (Task D)", leftPanel);
+    auto *form = new QFormLayout(configBox);
+
+    m_spinCaseCount = new QSpinBox(configBox);
+    m_spinCaseCount->setRange(10, 50000);
+    m_spinCaseCount->setValue(1000);
+    form->addRow("Batch Workload Cases:", m_spinCaseCount);
+
+    m_spinElementCount = new QSpinBox(configBox);
+    m_spinElementCount->setRange(10, 500);
+    m_spinElementCount->setValue(80);
+    form->addRow("FEA Elements / Case (N):", m_spinElementCount);
+
+    m_spinRepetitions = new QSpinBox(configBox);
+    m_spinRepetitions->setRange(1, 20);
+    m_spinRepetitions->setValue(5);
+    form->addRow("Repetitions / Worker:", m_spinRepetitions);
+
+    leftLayout->addWidget(configBox);
+
+    // 2. Hardware System Info Label
+    unsigned int hwThreads = std::thread::hardware_concurrency();
+    m_sysInfoLabel = new QLabel(QString("Hardware: Host CPU detected with %1 logical execution threads.")
+                                    .arg(hwThreads), leftPanel);
+    m_sysInfoLabel->setStyleSheet("color: #a0a5b8; font-size: 11px;");
+    leftLayout->addWidget(m_sysInfoLabel);
+
+    // 3. Execution Buttons & Progress Bar
+    m_runBtn = new QPushButton("Execute Parallel Benchmark", leftPanel);
+    m_runBtn->setStyleSheet("padding: 7px; font-weight: bold; font-size: 13px;");
+    connect(m_runBtn, &QPushButton::clicked, this, &PerformanceView::onRunBenchmarkClicked);
+    leftLayout->addWidget(m_runBtn);
+
+    m_progressBar = new QProgressBar(leftPanel);
+    m_progressBar->setRange(0, 100);
+    m_progressBar->setValue(100);
+    m_progressBar->setTextVisible(false);
+    m_progressBar->setFixedHeight(6);
+    leftLayout->addWidget(m_progressBar);
+
+    m_exportBtn = new QPushButton("Export Benchmark CSVs...", leftPanel);
+    connect(m_exportBtn, &QPushButton::clicked, this, &PerformanceView::onExportCsvClicked);
+    leftLayout->addWidget(m_exportBtn);
+
+    // 4. Results Summary Table
+    auto *resultsBox = new QGroupBox("Benchmark Metrics Table", leftPanel);
+    auto *resLayout = new QVBoxLayout(resultsBox);
+
+    m_resultsTable = new QTableWidget(3, 7, resultsBox);
+    m_resultsTable->setHorizontalHeaderLabels({"Workers", "Median", "Min", "Max", "Speedup", "Efficiency", "Max Delta"});
+    m_resultsTable->horizontalHeader()->setStretchLastSection(true);
+    m_resultsTable->verticalHeader()->setVisible(false);
+    resLayout->addWidget(m_resultsTable);
+
+    leftLayout->addWidget(resultsBox);
+    mainLayout->addWidget(leftPanel);
+
+    // Right Speedup Plot
+    m_plotWidget = new PlotWidget(this);
+    m_plotWidget->setTitle("Multicore Scaling: Measured Speedup vs Ideal Linear Scaling");
+    m_plotWidget->setXAxisLabel("Worker Threads (p)");
+    m_plotWidget->setYAxisLabel("Speedup Factor (S_p = T_1 / T_p)");
+    mainLayout->addWidget(m_plotWidget, 1);
+}
+
+void PerformanceView::onRunBenchmarkClicked() {
+    m_runBtn->setEnabled(false);
+    m_progressBar->setRange(0, 0); // busy indicator
+    QApplication::processEvents();
+
+    int cases = m_spinCaseCount->value();
+    int elements = m_spinElementCount->value();
+    int reps = m_spinRepetitions->value();
+
+    m_lastResult = Core::Parallel::BenchmarkEngine::runSuite(cases, elements, {1, 2, 4}, reps, 42);
+
+    m_progressBar->setRange(0, 100);
+    m_progressBar->setValue(100);
+    m_runBtn->setEnabled(true);
+
+    updateUiWithResults(m_lastResult);
+}
+
+void PerformanceView::updateUiWithResults(const Core::Parallel::BenchmarkSuiteResult &res) {
+    m_resultsTable->setRowCount(static_cast<int>(res.workerResults.size()));
+
+    PlotSeries measuredSeries;
+    measuredSeries.name = "Measured Speedup (Sp)";
+    measuredSeries.color = QColor(60, 200, 120);
+    measuredSeries.width = 3;
+    measuredSeries.showPoints = true;
+
+    PlotSeries idealSeries;
+    idealSeries.name = "Ideal Linear (Sp = p)";
+    idealSeries.color = QColor(140, 150, 170);
+    idealSeries.width = 2;
+    idealSeries.style = Qt::DashLine;
+
+    size_t maxWorkers = 1;
+
+    for (int i = 0; i < static_cast<int>(res.workerResults.size()); ++i) {
+        const auto &r = res.workerResults[i];
+        if (r.workerCount > maxWorkers) maxWorkers = r.workerCount;
+
+        m_resultsTable->setItem(i, 0, new QTableWidgetItem(QString::number(r.workerCount)));
+        m_resultsTable->setItem(i, 1, new QTableWidgetItem(QString("%1 ms").arg(r.medianTimeMs, 0, 'f', 2)));
+        m_resultsTable->setItem(i, 2, new QTableWidgetItem(QString("%1 ms").arg(r.minTimeMs, 0, 'f', 2)));
+        m_resultsTable->setItem(i, 3, new QTableWidgetItem(QString("%1 ms").arg(r.maxTimeMs, 0, 'f', 2)));
+        m_resultsTable->setItem(i, 4, new QTableWidgetItem(QString("%1x").arg(r.speedup, 0, 'f', 2)));
+        m_resultsTable->setItem(i, 5, new QTableWidgetItem(QString("%1%").arg(r.efficiency * 100.0, 0, 'f', 1)));
+        m_resultsTable->setItem(i, 6, new QTableWidgetItem(QString::number(r.maxDeltaVsSerial, 'e', 2)));
+
+        measuredSeries.points.push_back(QPointF(static_cast<double>(r.workerCount), r.speedup));
+    }
+
+    idealSeries.points.push_back(QPointF(1.0, 1.0));
+    idealSeries.points.push_back(QPointF(2.0, 2.0));
+    idealSeries.points.push_back(QPointF(static_cast<double>(maxWorkers), static_cast<double>(maxWorkers)));
+
+    m_plotWidget->clearSeries();
+    m_plotWidget->addSeries(idealSeries);
+    m_plotWidget->addSeries(measuredSeries);
+}
+
+void PerformanceView::onExportCsvClicked() {
+    QString dir = QFileDialog::getExistingDirectory(this, "Select Directory to Export Benchmark CSVs", "results/performance");
+    if (dir.isEmpty()) return;
+
+    std::string sumPath = dir.toStdString() + "/summary.csv";
+    std::string rawPath = dir.toStdString() + "/raw_timings.csv";
+
+    std::string sumCsv = Core::Parallel::BenchmarkEngine::exportSummaryCsv(m_lastResult);
+    std::string rawCsv = Core::Parallel::BenchmarkEngine::exportRawTimingsCsv(m_lastResult);
+
+    {
+        std::ofstream out(sumPath);
+        if (out.is_open()) out << sumCsv;
+    }
+    {
+        std::ofstream out(rawPath);
+        if (out.is_open()) out << rawCsv;
+    }
+
+    QMessageBox::information(this, "Export Succeeded", 
+        QString("Exported benchmark CSVs successfully:\n%1\n%2")
+            .arg(QString::fromStdString(sumPath))
+            .arg(QString::fromStdString(rawPath)));
+}
+
+} // namespace Workbench::App

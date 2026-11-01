@@ -28,6 +28,7 @@ int main() {
     assert(std::abs(y_hat0 - expectedH0) < 1e-12);
     double expectedLoss0 = 0.5 * (expectedH0 - 2.0) * (expectedH0 - 2.0);
     assert(std::abs(loss0 - expectedLoss0) < 1e-12);
+    (void)expectedLoss0;
 
     std::cout << "[PASS] Step 0 forward values exact:\n"
               << "       z1 = " << z1_0 << "\n"
@@ -48,6 +49,7 @@ int main() {
     assert(std::abs(g0.dJ_dc - expected_dJ_dc) < 1e-12);
     assert(std::abs(g0.dJ_dw - expected_dJ_dw) < 1e-12);
     assert(std::abs(g0.dJ_db - expected_dJ_db) < 1e-12);
+    (void)expected_dJ_dv; (void)expected_dJ_dc; (void)expected_dJ_dw; (void)expected_dJ_db;
 
     std::cout << "[PASS] Step 0 analytical gradients exact:\n"
               << "       dJ/dw = " << g0.dJ_dw << "\n"
@@ -107,6 +109,7 @@ int main() {
     bool expGrad = BackpropagationSolver::exportGradientCheckCsv("results/backprop/gradient_verification.csv", checks);
     assert(expHist);
     assert(expGrad);
+    (void)expHist; (void)expGrad;
     std::cout << "[PASS] Exported results/backprop/loss_history.csv and results/backprop/gradient_verification.csv\n";
 
     std::cout << "========================================================\n";
