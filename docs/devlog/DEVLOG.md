@@ -58,3 +58,33 @@
   * Packaging created `dist/UnifiedEngineeringWorkbench` (28.98 MB compressed ZIP with SHA256 checksum).
   * Standalone launch smoke test passed: `Launch.exe` spawned `WorkbenchApp.exe` (verified PID 19164) from outside build tree.
 * **Next Step**: Implement Task C — Verified 1D Steady-State Thermal Finite-Element Solver with Thomas algorithm, exact analytical benchmark, and midpoint mesh convergence.
+
+---
+
+## Milestone 2: Verified 1D Steady-State Thermal Finite-Element Solver & Convergence
+* **Timestamp**: 2026-11-01 20:00 IST
+* **Phase**: Phase 2 — Numerical Core (Task C)
+* **Objective**: Implement steady-state 1D thermal FEA solver for uniform rod using 2-node linear elements, Thomas algorithm tridiagonal solver, Dirichlet boundary imposition, analytical comparison, and midpoint convergence verification ($N=10, 20, 40, 80$).
+* **Files Created / Modified**:
+  * `src/core/thermal/ThermalParameters.hpp`
+  * `src/core/thermal/ThermalFeaSolver.hpp`, `src/core/thermal/ThermalFeaSolver.cpp`
+  * `src/core/thermal/ThermalConvergence.hpp`, `src/core/thermal/ThermalConvergence.cpp`
+  * `tests/numerical/test_thermal_fea.cpp`
+  * `docs/THERMAL_FEA_DERIVATION.md`, `docs/THERMAL_VERIFICATION.md`
+  * `results/thermal/convergence.csv`, `results/thermal/temperature_profiles.csv`
+* **Architecture Decisions**:
+  * Decoupled pure C++17 thermal solver from GUI.
+  * $O(N)$ Thomas algorithm directly solves the assembled tridiagonal system after Dirichlet elimination.
+  * Midpoint interpolation evaluates true quadratic discretization error ($e = \frac{q}{8k} h^2$) rather than superficial nodal zero error.
+* **Execution Commands**:
+  * `cmd.exe /c ".\scripts\build_msvc.cmd Release"`
+  * `cmd.exe /c ".\scripts\test_msvc.cmd Release"`
+* **Real Test Results**:
+  * $N=10 \implies e_\text{mid} = 1.25000000^\circ\text{C}$ (Expected: $1.25000000^\circ\text{C}$)
+  * $N=20 \implies e_\text{mid} = 0.31250000^\circ\text{C}$ (Expected: $0.31250000^\circ\text{C}$)
+  * $N=40 \implies e_\text{mid} = 0.07812500^\circ\text{C}$ (Expected: $0.07812500^\circ\text{C}$)
+  * $N=80 \implies e_\text{mid} = 0.01953125^\circ\text{C}$ (Expected: $0.01953125^\circ\text{C}$)
+  * Observed error reduction ratio: exactly $4.0000$, convergence order $p = 2.0000$.
+  * Boundary values preserved exactly: $T(0) = 100.0^\circ\text{C}, T(L) = 20.0^\circ\text{C}$.
+  * Both automated CTest targets (`test_smoke`, `test_thermal_fea`) passed 100%.
+* **Next Step**: Implement Task B — ASCII STL geometry parser and ANSYS nodal temperature CSV parser with unit tests and synthetic test datasets.

@@ -79,18 +79,15 @@ target_compile_features(Launch PRIVATE cxx_std_17)
 # ---------------------------------------------------------------------------
 enable_testing()
 
-file(GLOB_RECURSE TEST_SOURCES 
-    tests/*.cpp
-    tests/*.hpp
-    tests/*.h
-)
-
-if(TEST_SOURCES)
-    add_executable(WorkbenchTests ${TEST_SOURCES})
-    target_link_libraries(WorkbenchTests PRIVATE WorkbenchCore)
-    target_include_directories(WorkbenchTests PRIVATE 
+file(GLOB_RECURSE TEST_FILES tests/*.cpp)
+foreach(TEST_FILE ${TEST_FILES})
+    get_filename_component(TEST_NAME ${TEST_FILE} NAME_WE)
+    add_executable(${TEST_NAME} ${TEST_FILE})
+    target_link_libraries(${TEST_NAME} PRIVATE WorkbenchCore)
+    target_include_directories(${TEST_NAME} PRIVATE 
         ${CMAKE_CURRENT_SOURCE_DIR}/src
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/core
         ${CMAKE_CURRENT_SOURCE_DIR}/tests
     )
-    add_test(NAME AllWorkbenchTests COMMAND WorkbenchTests)
-endif()
+    add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
+endforeach()
