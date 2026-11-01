@@ -68,6 +68,10 @@ Every requirement is classified below according to empirical evidence:
 - **Status**: **`UNVERIFIED (Pending Official Employer Brief Receipt Timestamp)`**.
 - While retrospective effort records list activities from 2026-10-25 and git commits on 2026-11-01, the employer's official transmission email timestamp is not stored in this repository. Compliance cannot be asserted as verified without the official receipt date. The candidate must cross-reference their employer email timestamp.
 
+### 2.7 Item 2: Documentation Audit — Elimination of Machine-Specific Paths
+- A global regex scan across all Markdown files in the repository confirmed that all machine-specific absolute paths (`file:///D:/PASS%20Science%20Works/...`, `C:\Users\kulha\...`) have been removed and replaced with clean, portable relative paths.
+- This ensures that evaluators unpacking the archive to any path on Windows 11 encounter zero broken links.
+
 ---
 
 ## 3. Final Gate Verdict
@@ -105,10 +109,10 @@ Follow these two exact steps when your candidate ID and handwriting are ready:
 4. Scan the two physical sheets at 300 DPI into a single PDF file named:
    `HANDWRITTEN_APPENDIX_SCAN.pdf`
 5. Place this file into:
-   `D:\PASS Science Works\docs\appendix\HANDWRITTEN_APPENDIX_SCAN.pdf`
+   `docs/appendix/HANDWRITTEN_APPENDIX_SCAN.pdf`
 
 ### Action 2: Run the Final Packaging Command with Your Official Candidate ID (1 minute)
-Open a terminal in `D:\PASS Science Works` and run:
+Open a terminal in the project repository root and run:
 ```cmd
 cmd.exe /c scripts\package_msvc.cmd <YourCandidateID>
 ```

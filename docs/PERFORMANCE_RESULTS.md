@@ -33,7 +33,7 @@
 ---
 
 ## 4. Evidence Artifacts
-* Raw Timings CSV: [`results/performance/raw_timings.csv`](file:///d:/PASS%20Science%20Works/results/performance/raw_timings.csv)
-* Summary Metrics CSV: [`results/performance/summary.csv`](file:///d:/PASS%20Science%20Works/results/performance/summary.csv)
-* Numerical Agreement CSV: [`results/performance/agreement.csv`](file:///d:/PASS%20Science%20Works/results/performance/agreement.csv)
-* Integration Test Source: [`tests/integration/test_parallel_batch.cpp`](file:///d:/PASS%20Science%20Works/tests/integration/test_parallel_batch.cpp)
+* Raw Timings CSV: [`results/performance/raw_timings.csv`](../results/performance/raw_timings.csv)
+* Summary Metrics CSV: [`results/performance/summary.csv`](../results/performance/summary.csv)
+* Numerical Agreement CSV: [`results/performance/agreement.csv`](../results/performance/agreement.csv)
+* Integration Test Source: [`tests/integration/test_parallel_batch.cpp`](../tests/integration/test_parallel_batch.cpp)

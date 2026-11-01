@@ -13,13 +13,13 @@
 
 | Tool | Verified Version | Absolute Executable Path / Environment | Purpose |
 | :--- | :--- | :--- | :--- |
-| **C++ Compiler** | `cl.exe` (19.51.36231 x64) | `C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\MSVC\14.51.36231\bin\Hostx64\x64\cl.exe` | C++17/20 compilation, optimization, code generation |
+| **C++ Compiler** | `cl.exe` (19.51.36231 x64) | MSVC 19.51 (Visual Studio 2026 Developer Command Prompt) | C++17/20 compilation, optimization, code generation |
 | **C++ Linker** | `link.exe` (14.51.36231) | MSVC 14.51 Linker | Target PE32+ executable creation and runtime linking |
-| **Build Generator** | CMake `4.2.3` | `C:\Users\kulha\AppData\Local\Programs\Python\Python310\Scripts\cmake.exe` | Cross-platform build target configuration |
-| **Build Driver** | Ninja `1.13.0` | `C:\Users\kulha\AppData\Local\Programs\Python\Python310\Scripts\ninja.exe` | Ultra-fast parallel compilation graph execution |
-| **Qt Framework** | Qt `6.8.2` (Commercial / LGPLv3) | `C:\Qt\6.8.2\msvc2022_64` | Native desktop UI, 3D OpenGL viewport, signal/slot concurrency |
-| **Deployment Utility**| `windeployqt.exe` | `C:\Qt\6.8.2\msvc2022_64\bin\windeployqt.exe` | Automated collection of Qt platform plugins and shared DLLs |
-| **VCS & Hub** | Git `2.54.0` & GitHub CLI `gh` | `C:\Program Files\Git\cmd\git.exe`, `C:\Program Files\GitHub CLI\gh.exe` | Source revision tracking and private repository hosting |
+| **Build Generator** | CMake `4.2.3` | CMake on PATH (`cmake.exe`) | Cross-platform build target configuration |
+| **Build Driver** | Ninja `1.13.0` | Ninja on PATH (`ninja.exe`) | Ultra-fast parallel compilation graph execution |
+| **Qt Framework** | Qt `6.8.2` (Commercial / LGPLv3) | `C:\Qt\6.8.2\msvc2022_64` (Standard Qt root) | Native desktop UI, 3D OpenGL viewport, signal/slot concurrency |
+| **Deployment Utility**| `windeployqt.exe` | `%QTDIR%\bin\windeployqt.exe` | Automated collection of Qt platform plugins and shared DLLs |
+| **VCS & Hub** | Git `2.54.0` & GitHub CLI `gh` | Git & GitHub CLI on PATH | Source revision tracking and private repository hosting |
 | **Test Framework** | CTest & Custom C++ Test Runner | CMake CTest runner | Automated regression, unit, and numerical verification testing |
 
 ---

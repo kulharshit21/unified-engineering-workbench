@@ -33,6 +33,6 @@ and comparing against $T_\text{exact}(x_\text{mid})$, the true interior discreti
 ---
 
 ## 3. Evidence Artifacts
-* Underlying Convergence CSV: [`results/thermal/convergence.csv`](file:///d:/PASS%20Science%20Works/results/thermal/convergence.csv)
-* Temperature Profiles CSV: [`results/thermal/temperature_profiles.csv`](file:///d:/PASS%20Science%20Works/results/thermal/temperature_profiles.csv)
-* Automated Test Source: [`tests/numerical/test_thermal_fea.cpp`](file:///d:/PASS%20Science%20Works/tests/numerical/test_thermal_fea.cpp)
+* Underlying Convergence CSV: [`results/thermal/convergence.csv`](../results/thermal/convergence.csv)
+* Temperature Profiles CSV: [`results/thermal/temperature_profiles.csv`](../results/thermal/temperature_profiles.csv)
+* Automated Test Source: [`tests/numerical/test_thermal_fea.cpp`](../tests/numerical/test_thermal_fea.cpp)

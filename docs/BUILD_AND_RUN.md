@@ -56,14 +56,14 @@ This automated pipeline:
 
 For end users and evaluators who do not wish to compile from source:
 1. Extract `release/CandidateID_Workbench.zip` into any directory on Windows 11 x64.
-2. Double-click [`Launch.exe`](file:///D:/PASS%20Science%20Works/dist/UnifiedEngineeringWorkbench/Launch.exe).
+2. Double-click `Launch.exe`.
 3. The application opens immediately. **No command prompt window appears, no administrator rights are requested, and no Internet connection is required.**
 
 ---
 
 ## 4. CMake Presets for IDEs (VS Code / Visual Studio)
 
-The repository provides [`CMakePresets.json`](file:///D:/PASS%20Science%20Works/CMakePresets.json):
+The repository provides [`CMakePresets.json`](../CMakePresets.json):
 ```powershell
 # Configure using preset
 cmake --preset msvc-release
@@ -74,4 +74,4 @@ cmake --build --preset msvc-release
 # Test using preset
 ctest --preset msvc-release
 ```
-In VS Code, press `Ctrl+Shift+B` to trigger the default build task configured in [`.vscode/tasks.json`](file:///D:/PASS%20Science%20Works/.vscode/tasks.json).
+In VS Code, press `Ctrl+Shift+B` to trigger the default build task configured in [`.vscode/tasks.json`](../.vscode/tasks.json).
