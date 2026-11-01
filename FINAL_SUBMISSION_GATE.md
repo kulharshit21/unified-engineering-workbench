@@ -1,8 +1,10 @@
 # PASS SCIENCE WORKS — FINAL SUBMISSION GATE AUDIT
 **Unified Engineering Workbench (R&D Internship 2026–2027)**
 
-- **Audit Execution Date**: 2026-11-01 22:45 IST
-- **Evaluated Commit**: Working Tree based on `6d2f621` (`main`)
+- **Audit Execution Date**: 2026-11-01 23:15 IST
+- **Evaluated Commit**: `7e429f4` (`main`)
+- **Package Archive**: `release/CandidateID_Workbench.zip` (37.0 MB)
+- **Archive SHA-256**: `D54A3E4DB9A006F6A380058CD1CC4107B3C5D55FD33A15BA99C7AFD955EBD415`
 - **Repository Remote**: `https://github.com/kulharshit21/unified-engineering-workbench.git` (Private)
 - **Host Audit System**: Windows 11 Home x64 (Build 26100), AMD Ryzen AI 9 HX 370 (12C / 24T), 32 GB RAM, NVIDIA RTX 5070 Ti
 - **Toolchain**: MSVC 19.51.36248.0 (VS 2026), CMake 4.2.3, Ninja 1.13, Qt 6.8.2 MSVC 2022 x64, Python 3.10
