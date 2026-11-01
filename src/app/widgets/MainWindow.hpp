@@ -20,6 +20,10 @@ public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow() override = default;
 
+    int tabCount() const { return m_mainTabs ? m_mainTabs->count() : 0; }
+    void setCurrentTab(int index) { if (m_mainTabs) m_mainTabs->setCurrentIndex(index); }
+    QString tabText(int index) const { return m_mainTabs ? m_mainTabs->tabText(index) : QString(); }
+
 private:
     void setupUi();
     void createMenus();

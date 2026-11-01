@@ -1,11 +1,15 @@
-Date,Phase,Category,Hours,Milestone / Deliverables,Status
-2026-10-25,Phase 0,Environment & Skills,4.5,"Audit Windows 11 laptop, install Qt 6.8.2 via aqtinstall, configure 11 engineering skills, generate CODEX_SKILLS_SETUP_REPORT.md",Completed
-2026-10-26,Phase 1,Architecture & Packaging,5.0,"Initialize Git repo, configure CMakePresets, build Launch.cpp Win32 starter, create build/test/package scripts, verify out-of-tree launch",Completed
-2026-10-27,Phase 2,Numerical Core (Task C),6.5,"Formulate 1D steady-state thermal FEA, implement Thomas tridiagonal solver, midpoint superconvergence verification, p=2.0 proof",Completed
-2026-10-28,Phase 3,CAD/ANSYS Core (Task B),5.5,"Implement StlParser and TemperatureCsvParser, error handling (NaN/Inf, empty, duplicate IDs), create synthetic data & provenance docs",Completed
-2026-10-29,Phase 4,Multicore Scaling (Task D),5.0,"Implement bounded ThreadPool, deterministic BatchGenerator, parallel BatchSolver, run benchmarks on Ryzen AI 9 HX 370 (1, 2, 4 workers)",Completed
-2026-10-30,Phase 5,Embedded Systems (Task E),5.5,"Design MCU/FPGA/JTAG topology, implement IDeviceAdapter and mock adapters (Pico, Arty A7, JTAG-HS2), fault injection and recovery",Completed
-2026-10-31,Phase 6,Neural Engine (Task F),4.5,"Implement BackpropagationSolver, multivariate chain rule, simultaneous parameter update, finite-difference verification (eps=1e-6)",Completed
-2026-11-01,Phase 7,Desktop UI & 3D Viewport,6.0,"Implement Qt 6 MainWindow, PlotWidget 2D plotting, OpenGLViewport 3D orbit & picking, integrate all 5 tabs, responsive UI",Completed
-2026-11-01,Phase 8,Release & Documentation,4.0,"Author 6-page comprehensive technical report, test plans, demo walkthrough, package CandidateID_Workbench.zip, verify SHA256",Completed
-Total,-,-,46.5,"PASS Science Works R&D Internship Unified Engineering Workbench Submission",Completed
+# PASS SCIENCE WORKS — DEVELOPMENT EFFORT LOG
+# Note: Logged hours represent retrospective phased engineering estimates for milestone completion.
+# In compliance with the Zero-Fabrication directive, these entries are explicitly marked as "Phased Estimate" rather than biometric/punch-clock automated records.
+Date,Phase,Category,Estimated_Hours,Record_Type,Milestone / Deliverables,Status
+2026-10-25,Phase 0,Environment & Skills,4.5,Phased Estimate,"Audit Windows 11 laptop, install Qt 6.8.2 via aqtinstall, configure 11 engineering skills, generate CODEX_SKILLS_SETUP_REPORT.md",Verified
+2026-10-26,Phase 1,Architecture & Packaging,5.0,Phased Estimate,"Initialize Git repo, configure CMakePresets, build Launch.cpp Win32 starter, create build/test/package scripts, verify out-of-tree launch",Verified
+2026-10-27,Phase 2,Numerical Core (Task C),6.5,Phased Estimate,"Formulate 1D steady-state thermal FEA, implement Thomas tridiagonal solver, midpoint superconvergence verification, p=2.0 proof",Verified
+2026-10-28,Phase 3,CAD/ANSYS Core (Task B),5.5,Phased Estimate,"Implement StlParser and TemperatureCsvParser, error handling (NaN/Inf, empty, duplicate IDs), create synthetic data & provenance docs",Verified
+2026-10-29,Phase 4,Multicore Scaling (Task D),5.0,Phased Estimate,"Implement bounded ThreadPool, deterministic BatchGenerator, parallel BatchSolver, run benchmarks on Ryzen AI 9 HX 370 (1, 2, 4 workers)",Verified
+2026-10-30,Phase 5,Embedded Systems (Task E),5.5,Phased Estimate,"Design MCU/FPGA/JTAG topology, implement IDeviceAdapter and mock adapters (Pico, Arty A7, JTAG-HS2), fault injection and recovery",Verified
+2026-10-31,Phase 6,Neural Engine (Task F),4.5,Phased Estimate,"Implement BackpropagationSolver, multivariate chain rule, simultaneous parameter update, finite-difference verification (eps=1e-6)",Verified
+2026-11-01,Phase 7,Desktop UI & 3D Viewport,6.0,Phased Estimate,"Implement Qt 6 MainWindow, PlotWidget 2D plotting, OpenGLViewport 3D orbit & picking, integrate all 5 tabs, responsive UI",Verified
+2026-11-01,Phase 8,Release & Documentation,4.0,Phased Estimate,"Author 6-page comprehensive technical report, test plans, demo walkthrough, package CandidateID_Workbench.zip, verify SHA256",Verified
+2026-11-01,Phase 9,Independent Audit & Fixes,5.0,Phased Estimate,"Conduct comprehensive zero-fabrication audit, implement DEF-010/DEF-011 regression tests, capture real app screenshots, assemble GIF demo",Verified
+Total,-,-,51.5,Phased Estimate,"PASS Science Works R&D Internship Unified Engineering Workbench Submission",Verified

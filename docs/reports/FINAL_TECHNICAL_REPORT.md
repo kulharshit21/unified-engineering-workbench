@@ -43,7 +43,7 @@ The **Unified Engineering Workbench** delivers an end-to-end, production-grade w
 
 ### 2.1 File Parsing & Robustness
 The workbench implements strict, high-throughput C++ parsers for industry-standard engineering formats without external library bloat:
-- **ASCII STL Parser (`StlParser.cpp`)**: Validates ASCII STL geometry streams. Enforces solid header detection, facet orientation, and vertex parsing. It rigorously detects and rejects truncated facets, missing coordinates, non-finite values (`NaN` / `Inf`), and binary STL headers, providing human-readable diagnostic error strings.
+- **ASCII STL Parser (`StlParser.cpp`)**: Validates ASCII STL geometry streams. Enforces solid header detection, facet orientation, and vertex parsing. It rigorously detects and rejects truncated facets, missing coordinates, non-finite values (`NaN` / `Inf`), and binary STL headers, providing human-readable diagnostic error strings. Facet surface normals are automatically recalculated via the right-handed vector cross-product.
 - **ANSYS Nodal CSV Parser (`TemperatureCsvParser.cpp`)**: Parses ANSYS structural/thermal nodal tables adhering strictly to the five-column schema: `node_id,x_m,y_m,z_m,temperature_C`. The parser checks header schemas, converts coordinates and temperatures with `std::stod`, rejects non-numeric entries, tracks duplicate node IDs, and computes field statistics ($T_\text{min}, T_\text{max}, T_\text{mean}$).
 
 ### 2.2 3D Viewport & Interactive Inspection
@@ -67,7 +67,8 @@ $$T(0) = T_0 = 100.0^\circ\text{C}, \quad T(L) = T_L = 20.0^\circ\text{C}$$
 with assigned physical parameters: $L = 1.0\text{ m}, A = 1.0 \times 10^{-4}\text{ m}^2, k = 10.0\text{ W/(m}\cdot\text{K)}, q = 10,000.0\text{ W/m}^3$.
 
 Integrating analytically yields the exact continuous quadratic temperature profile:
-$$T_\text{exact}(x) = T_0 - (T_0 - T_L)\frac{x}{L} + \frac{q}{2k} x (L - x) = 100 - 80x + 500x(1 - x)$$
+$$T_\text{exact}(x) = T_0 - (T_0 - T_L)\frac{x}{L} + \frac{q}{2k} x (L - x) = 100 - 80x + 500x(1 - x) = 100 + 420x - 500x^2$$
+Internal peak temperature occurs at $x^* = 0.420\text{ m}$ with $T(0.420) = 188.20^\circ\text{C} > 100^\circ\text{C}$.
 
 ### 3.2 Finite Element Formulation & Thomas Tridiagonal Solver
 The rod is discretized into $N$ uniform 2-node linear elements of length $h = L / N$. On each element $e$, linear Lagrange shape functions $N_1(\xi) = 1 - \xi/h$ and $N_2(\xi) = \xi/h$ yield the local stiffness matrix $\mathbf{K}^e$ and load vector $\mathbf{F}^e$:
@@ -82,7 +83,7 @@ In 1D linear element FEA with constant coefficients, the nodal values obtained f
 To rigorously measure the true asymptotic truncation error, error evaluation must be performed at element midpoints:
 $$x_\text{mid} = x_i + \frac{h}{2}$$
 Expanding $T_\text{exact}(x)$ via Taylor series around the linear interpolation:
-$$e(x_\text{mid}) = T_\text{exact}(x_\text{mid}) - T_\text{FEA}(x_\text{mid}) = \frac{q h^2}{8k}$$
+$$e(x_\text{mid}) = T_\text{exact}(x_\text{mid}) - T_\text{FEA}(x_\text{mid}) = \frac{q h^2}{8k} = 125.0 \cdot h^2$$
 Empirical evaluation across $N = 10, 20, 40, 80$ elements demonstrates **exact quadratic convergence** ($p = 2.0000$):
 
 | Elements $N$ | Element Size $h$ (m) | Observed Midpoint Error (°C) | Theoretical Error $\frac{qh^2}{8k}$ (°C) | Reduction Ratio | Order of Accuracy $p$ |
@@ -98,22 +99,26 @@ Empirical evaluation across $N = 10, 20, 40, 80$ elements demonstrates **exact q
 
 ### 4.1 Concurrency Architecture
 To assess CPU parallel performance, the workbench implements a thread-pool batch execution framework (`ThreadPool.hpp`, `BatchSolver.cpp`):
-- Workload: 1,000 independent thermal rod configurations ($N = 80$ elements each) generated deterministically using pseudo-random seed 42.
-- Worker configurations: Evaluated across $p \in \{1, 2, 4\}$ worker threads, capped at the machine's 24 logical execution threads.
-- Repetitions: 5 independent runs per worker count measured using `std::chrono::high_resolution_clock`.
+- Workloads: Evaluated on both standard workload (1,000 cases, $N=80$) and extended workload (10,000 cases, $N=80$) to measure thread dispatch overhead vs. sustained multi-core scaling.
+- Worker configurations: Evaluated across $p \in \{1, 2, 4, 8\}$ worker threads on AMD Ryzen AI 9 HX 370 (12 cores / 24 threads).
+- Repetitions: 5 independent runs per worker count measured using `std::chrono::steady_clock`.
 
 ### 4.2 Benchmark Results on AMD Ryzen AI 9 HX 370
-Timings and scaling factors recorded in `results/performance/summary.csv`:
+Timings and scaling factors recorded in `results/performance/summary.csv` and `summary_extended.csv`:
 
-| Worker Threads ($p$) | Median Time (ms) | Mean Time (ms) | Min Time (ms) | Max Time (ms) | Speedup Factor ($S_p = T_1 / T_p$) | Parallel Efficiency ($E_p$) | Max Temperature Delta vs Serial |
-|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| **1** (Serial) | $1.91$ | $1.92$ | $1.83$ | $2.04$ | $1.00\times$ | $1.00$ ($100\%$) | $0.0000 \times 10^{-15\circ}\text{C}$ |
-| **2** | $1.72$ | $1.77$ | $1.63$ | $2.05$ | $1.11\times$ | $0.56$ ($56\%$) | $0.0000 \times 10^{-15\circ}\text{C}$ |
-| **4** | $1.16$ | $1.12$ | $1.01$ | $1.18$ | **$1.65\times$** | $0.41$ ($41\%$) | $0.0000 \times 10^{-15\circ}\text{C}$ |
+| Workload Configuration | Workers ($p$) | Median Time (ms) | Mean Time (ms) | Min Time (ms) | Speedup ($S_p = T_1 / T_p$) | Efficiency ($E_p$) | Max Delta vs Serial |
+|:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| **Standard (1,000 cases)** | **1** | $1.85$ | $1.87$ | $1.79$ | $1.00\times$ | 100.0% | $0.0000 \times 10^{-15\circ}\text{C}$ |
+| Standard (1,000 cases) | **2** | $1.24$ | $1.33$ | $1.15$ | $1.49\times$ | 74.5% | $0.0000 \times 10^{-15\circ}\text{C}$ |
+| Standard (1,000 cases) | **4** | $0.85$ | $0.90$ | $0.80$ | **$2.19\times$** | 54.8% | $0.0000 \times 10^{-15\circ}\text{C}$ |
+| **Extended (10,000 cases)**| **1** | $20.41$ | $20.62$ | $19.25$ | $1.00\times$ | 100.0% | $0.0000 \times 10^{-15\circ}\text{C}$ |
+| Extended (10,000 cases)| **2** | $11.25$ | $11.14$ | $10.30$ | **$1.81\times$** | **90.7%** | $0.0000 \times 10^{-15\circ}\text{C}$ |
+| Extended (10,000 cases)| **4** | $6.54$ | $6.57$ | $6.11$ | **$3.12\times$** | **78.0%** | $0.0000 \times 10^{-15\circ}\text{C}$ |
+| Extended (10,000 cases)| **8** | $4.67$ | $4.57$ | $3.96$ | **$4.37\times$** | **54.6%** | $0.0000 \times 10^{-15\circ}\text{C}$ |
 
 ### 4.3 Scalability & Numerical Agreement Insights
-1. **Amdahl's Law & Thread Dispatch Overhead**: Because solving 1,000 tridiagonal systems of size $80 \times 80$ in optimized C++ takes less than $2.0\text{ ms}$ total, thread dispatch latency and mutex synchronization introduce bounded sub-linear scaling ($1.65\times$ speedup on 4 workers). Larger workloads or 2D/3D systems amortize overhead significantly further.
-2. **Deterministic Numerical Invariance**: The maximum absolute temperature delta between serial ($p=1$) and parallel ($p=4$) solutions across all 81,000 nodal evaluations was identically zero ($0.00 \times 10^{-15\circ}\text{C}$), completely satisfying the required $|\Delta T| \le 10^{-8\circ}\text{C}$ tolerance threshold.
+1. **Overhead Amortization**: For the 1,000-case workload (1.85 ms serial), thread pool wakeups and queue locks consume ~0.4 ms, limiting 4-worker efficiency to $54.8\%$. Expanding to 10,000 cases (20.41 ms serial) amortizes these fixed synchronization costs, lifting 4-worker efficiency to **$78.0\%$** and 2-worker efficiency to **$90.7\%$**.
+2. **Deterministic Invariance**: The maximum absolute temperature delta between serial ($p=1$) and parallel ($p=4, 8$) solutions across all nodal evaluations was identically zero ($0.0000 \times 10^{-15\circ}\text{C}$), completely satisfying the required $|\Delta T| \le 10^{-8\circ}\text{C}$ tolerance threshold.
 
 ---
 
@@ -153,9 +158,9 @@ $$\frac{\partial J}{\partial \hat{y}} = \hat{y} - y$$
 Output layer partial derivatives:
 $$\frac{\partial J}{\partial v} = (\hat{y} - y) h, \quad \frac{\partial J}{\partial c} = \hat{y} - y$$
 Propagating through the hyperbolic tangent activation ($\frac{d}{dz}\tanh(z) = 1 - \tanh^2(z) = 1 - h^2$):
-$$\frac{\partial J}{\partial z_1} = (\hat{y} - y) v (1 - h^2)$$
+$$\delta_1 = \frac{\partial J}{\partial z_1} = (\hat{y} - y) v (1 - h^2)$$
 Hidden layer partial derivatives:
-$$\frac{\partial J}{\partial w} = (\hat{y} - y) v (1 - h^2) x, \quad \frac{\partial J}{\partial b} = (\hat{y} - y) v (1 - h^2)$$
+$$\frac{\partial J}{\partial w} = \delta_1 \cdot x, \quad \frac{\partial J}{\partial b} = \delta_1 \cdot 1.0$$
 
 ### 6.3 Central Finite-Difference Verification ($\epsilon = 10^{-6}$)
 To mathematically verify the exact analytical expressions without reliance on third-party automatic differentiation libraries, the workbench evaluates central finite differences:
@@ -164,9 +169,9 @@ With truncation error $O(\epsilon^2) \approx 10^{-12}$, the maximum absolute err
 
 | Parameter $\theta_i$ | Analytical Gradient $\nabla_\text{ana}$ | Numerical Gradient $\nabla_\text{num}$ | Absolute Delta $|\delta|$ | Status ($\le 10^{-5}$) |
 |:---:|:---:|:---:|:---:|:---:|
-| **$w$** | $-1.20946440$ | $-1.20946440$ | $1.130 \times 10^{-10}$ | **PASS** |
-| **$b$** | $-1.20946440$ | $-1.20946440$ | $1.130 \times 10^{-10}$ | **PASS** |
-| **$v$** | $-0.71068193$ | $-0.71068193$ | $5.254 \times 10^{-11}$ | **PASS** |
+| **$w$** | $-1.20946448$ | $-1.20946448$ | $1.130 \times 10^{-10}$ | **PASS** |
+| **$b$** | $-1.20946448$ | $-1.20946448$ | $1.130 \times 10^{-10}$ | **PASS** |
+| **$v$** | $-0.71068205$ | $-0.71068205$ | $5.254 \times 10^{-11}$ | **PASS** |
 | **$c$** | $-1.53788284$ | $-1.53788284$ | $1.118 \times 10^{-10}$ | **PASS** |
 
 ### 6.4 Simultaneous Update & 100-Step Training Progression
@@ -179,22 +184,24 @@ Over 100 gradient descent steps with learning rate $\eta = 0.1$, the loss decrea
 ## 7. Packaging, Reproducibility & AI Transparency
 
 ### 7.1 Standalone Windows 11 Release (`CandidateID_Workbench.zip`)
-- **Native Starter (`Launch.exe`)**: Written in pure Win32 C++ (compiled with `cl.exe packaging/Launch.cpp /O2`). Contains zero external DLL dependencies.
+- **Native Starter (`Launch.exe`)**: Written in pure Win32 C++ (compiled with `cl.exe packaging/Launch.cpp /O2 /SUBSYSTEM:WINDOWS`). Contains zero external DLL dependencies.
 - **Bundled Runtimes**: Qt 6.8.2 libraries deployed via `windeployqt`; Microsoft Visual C++ CRT redistributables deployed alongside the application.
 - **Relocatable & Offline**: Tested by extracting to an isolated temporary directory and executing `Launch.exe`. The application opens immediately in offline standalone mode.
 - **Package Checksum**: Generated into `release/CandidateID_Workbench.sha256`.
 
 ### 7.2 AI Transparency & Ethical Engineering Compliance
 In alignment with the assignment guidelines:
-- **AI Tool Utilization**: Antigravity AI (Google DeepMind) served as an autonomous pair-programming assistant for boilerplate scaffolding, CMake script generation, and KaTeX formatting.
+- **AI Tool Utilization**: ChatGPT Codex / Google Antigravity served as an autonomous pair-programming assistant for boilerplate scaffolding, CMake script generation, and KaTeX formatting.
 - **Verification Integrity**: All mathematical formulas, physical equations, test matrices, and execution receipts were independently verified by the candidate engineer. Zero tests, benchmark values, or handwritten scans were fabricated.
+- **Audit Findings**: Discrepancies between previous AI text summaries and underlying source code were independently investigated, verified in C++ regression tests, and corrected.
 
 ---
 
 ## 8. Conclusion
 
-The **Unified Engineering Workbench** fulfills all technical criteria established by PASS SCIENCE WORKS for the R&D Internship 2026–2027:
-- All 6 technical tasks (Tasks A–F) fully implemented and empirically verified.
+The **Unified Engineering Workbench** delivers a comprehensive, production-quality implementation of the PASS SCIENCE WORKS R&D Common Internship brief:
+- All 6 technical tasks (Tasks A–F) and mandatory gates are fully implemented, verified, and documented.
 - 100% of automated CTest test targets pass natively under MSVC on Windows 11 x64.
 - Clean, maintainable C++17 architecture with strict separation between numerical solvers and UI.
-- All 100 rubric points achieved with a completely defensible evaluation trail.
+- Self-contained, relocatable Windows 11 executable operating offline without external runtime dependencies.
+- All technical documentation, mathematical derivations, defect analyses, and verification receipts are published and preserved in the repository.

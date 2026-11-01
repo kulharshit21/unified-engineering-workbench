@@ -37,10 +37,10 @@ if os.path.exists(profiles_csv):
             data_by_n[n]['T_num'].append(float(r['T_numerical_C']))
             data_by_n[n]['T_exact'].append(float(r['T_exact_C']))
             
-    # Plot exact analytical curve
+    # Plot exact analytical curve: T(x) = 100 - 80*x + 500*x*(1 - x) = 100 + 420*x - 500*x^2
     x_exact = np.linspace(0, 1.0, 200)
     T_exact = 100.0 - 80.0 * x_exact + 500.0 * x_exact * (1.0 - x_exact)
-    ax.plot(x_exact, T_exact, 'k-', linewidth=2.5, label='Exact Analytical $T_{exact}(x)$', zorder=2)
+    ax.plot(x_exact, T_exact, 'k-', linewidth=2.5, label='Exact Analytical $T_{exact}(x) = 100 + 420x - 500x^2$', zorder=2)
     
     colors = {10: '#e41a1c', 20: '#377eb8', 40: '#4daf4a', 80: '#984ea3'}
     markers = {10: 'o', 20: 's', 40: '^', 80: 'd'}
@@ -74,7 +74,7 @@ if os.path.exists(convergence_csv):
             err_theo.append(float(r['theoretical_error_C']))
             
     ax.loglog(h_vals, err_obs, 'ro-', markersize=8, linewidth=2, label='Observed Max Midpoint Error ($e_{max}$)', zorder=3)
-    ax.loglog(h_vals, err_theo, 'k--', linewidth=1.5, label=r'Theoretical $O(h^2)$ Bound: $e = \frac{q h^2}{8k}$', zorder=2)
+    ax.loglog(h_vals, err_theo, 'k--', linewidth=1.5, label=r'Theoretical $O(h^2)$ Bound: $e = \frac{q h^2}{8k} = 125 h^2$', zorder=2)
     
     for h, e in zip(h_vals, err_obs):
         ax.annotate(f"{e:.6f} °C", (h, e), textcoords="offset points", xytext=(-15, 8), fontsize=9)
@@ -92,6 +92,8 @@ if os.path.exists(convergence_csv):
 
 # 3. Parallel Speedup & Efficiency Plots
 summary_csv = 'results/performance/summary.csv'
+ext_summary_csv = 'results/performance/summary_extended.csv'
+
 if os.path.exists(summary_csv):
     workers, speedups, efficiencies, medians = [], [], [], []
     with open(summary_csv, 'r') as f:
@@ -102,19 +104,35 @@ if os.path.exists(summary_csv):
             efficiencies.append(float(r['efficiency']) * 100.0)
             medians.append(float(r['median_time_ms']))
             
+    ext_workers, ext_speedups, ext_efficiencies, ext_medians = [], [], [], []
+    if os.path.exists(ext_summary_csv):
+        with open(ext_summary_csv, 'r') as f:
+            reader = csv.DictReader(f)
+            for r in reader:
+                ext_workers.append(int(r['workers_p']))
+                ext_speedups.append(float(r['speedup_T1_over_Tp']))
+                ext_efficiencies.append(float(r['efficiency']) * 100.0)
+                ext_medians.append(float(r['median_time_ms']))
+
     # Speedup plot
-    fig, ax = plt.subplots(figsize=(7, 5), dpi=300)
-    ax.plot(workers, workers, 'k--', linewidth=1.8, label='Ideal Linear Speedup ($S_p = p$)', zorder=2)
-    ax.plot(workers, speedups, 'go-', linewidth=2.2, markersize=8, label='Measured CPU Speedup ($S_p = T_1 / T_p$)', zorder=3)
+    fig, ax = plt.subplots(figsize=(8, 5.2), dpi=300)
+    all_w = sorted(list(set(workers + ext_workers)))
+    ax.plot(all_w, all_w, 'k--', linewidth=1.8, label='Ideal Linear Speedup ($S_p = p$)', zorder=2)
+    ax.plot(workers, speedups, 'go-', linewidth=2.2, markersize=8, label='Standard Workload (1,000 cases, N=80)', zorder=3)
+    
+    if ext_workers:
+        ax.plot(ext_workers, ext_speedups, 'md-', linewidth=2.2, markersize=8, label='Extended Workload (10,000 cases, N=80)', zorder=4)
+        for w, s, m in zip(ext_workers, ext_speedups, ext_medians):
+            ax.annotate(f"{s:.2f}x ({m:.1f}ms)", (w, s), textcoords="offset points", xytext=(-25, 8), fontsize=8, color='#800080', fontweight='bold')
     
     for w, s, m in zip(workers, speedups, medians):
-        ax.annotate(f"{s:.2f}x ({m:.2f} ms)", (w, s), textcoords="offset points", xytext=(-20, 8), fontsize=9, fontweight='bold')
+        ax.annotate(f"{s:.2f}x ({m:.2f}ms)", (w, s), textcoords="offset points", xytext=(-25, -14), fontsize=8, color='#006400', fontweight='bold')
         
-    ax.set_title('Multicore CPU Scaling: 1,000 FEA Solves on AMD Ryzen AI 9 HX 370', fontweight='bold')
+    ax.set_title('Multicore CPU Scaling on AMD Ryzen AI 9 HX 370 (Zen 5)', fontweight='bold')
     ax.set_xlabel('Worker Threads ($p$)')
-    ax.set_ylabel('Speedup Factor ($S_p$)')
-    ax.set_xticks(workers)
-    ax.set_ylim(0.5, 4.5)
+    ax.set_ylabel('Speedup Factor ($S_p = T_1 / T_p$)')
+    ax.set_xticks(all_w)
+    ax.set_ylim(0.5, max(all_w) + 0.5)
     ax.legend(frameon=True, facecolor='white', framealpha=0.9)
     fig.tight_layout()
     fig.savefig('results/performance/speedup.png')
@@ -123,18 +141,22 @@ if os.path.exists(summary_csv):
     print("[PASS] Generated results/performance/speedup.png")
     
     # Efficiency plot
-    fig, ax = plt.subplots(figsize=(7, 5), dpi=300)
+    fig, ax = plt.subplots(figsize=(8, 5.2), dpi=300)
     ax.axhline(100.0, color='gray', linestyle='--', label='Ideal Efficiency (100%)')
-    ax.plot(workers, efficiencies, 'bs-', linewidth=2.2, markersize=8, label='Measured Efficiency ($E_p = S_p / p$)', zorder=3)
-    
+    ax.plot(workers, efficiencies, 'bs-', linewidth=2.2, markersize=8, label='Standard Workload (1,000 cases)', zorder=3)
+    if ext_workers:
+        ax.plot(ext_workers, ext_efficiencies, 'ro-', linewidth=2.2, markersize=8, label='Extended Workload (10,000 cases)', zorder=4)
+        for w, eff in zip(ext_workers, ext_efficiencies):
+            ax.annotate(f"{eff:.1f}%", (w, eff), textcoords="offset points", xytext=(-15, 8), fontsize=8, color='#b22222', fontweight='bold')
+
     for w, eff in zip(workers, efficiencies):
-        ax.annotate(f"{eff:.1f}%", (w, eff), textcoords="offset points", xytext=(-15, 8), fontsize=9, fontweight='bold')
+        ax.annotate(f"{eff:.1f}%", (w, eff), textcoords="offset points", xytext=(-15, -14), fontsize=8, color='#00008b', fontweight='bold')
         
-    ax.set_title('Parallel Efficiency: Thread Dispatch & Cache Amortization', fontweight='bold')
+    ax.set_title('Parallel Efficiency: Thread Dispatch vs Compute Saturation', fontweight='bold')
     ax.set_xlabel('Worker Threads ($p$)')
-    ax.set_ylabel('Parallel Efficiency (%)')
-    ax.set_xticks(workers)
-    ax.set_ylim(20, 110)
+    ax.set_ylabel('Parallel Efficiency ($E_p = S_p / p$) (%)')
+    ax.set_xticks(all_w)
+    ax.set_ylim(20, 115)
     ax.legend(frameon=True, facecolor='white', framealpha=0.9)
     fig.tight_layout()
     fig.savefig('results/performance/efficiency.png')

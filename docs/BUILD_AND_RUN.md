@@ -1,64 +1,77 @@
-# PASS Science Works — Build and Execution Guide
+# Build, Run & Deployment Guide
 
-This document provides developer instructions for building, running, testing, and packaging the **Unified Engineering Workbench** on Windows 11 x64.
+This guide provides step-by-step instructions for building, testing, running, and packaging the **PASS SCIENCE WORKS Unified Engineering Workbench** on Windows 11 x64.
 
 ---
 
-## 1. Prerequisites and Environment Setup
+## 1. System Requirements & Toolchain Prerequisites
 
-### 1.1 Required Toolchains
+To build from source, the workstation must have:
 - **Operating System**: Windows 11 x64 (Build 22000+)
-- **Compiler**: Visual Studio 2022 or 2026 Developer Command Prompt (`cl.exe` 19.30+ with C++17 support)
-- **Build System**: CMake 3.20+ and Ninja (available on PATH)
-- **GUI Framework**: Qt 6.8.2 MSVC 2022 x64 (installed at `C:\Qt\6.8.2\msvc2022_64` or on `CMAKE_PREFIX_PATH`)
-- **Version Control**: Git 2.30+
+- **C++ Compiler**: Microsoft Visual Studio 2026 / 2022 C++ Build Tools (MSVC 19.30+ / 19.51+) supporting ISO C++17
+- **Build System**: CMake 3.25+ (CMake 4.2.3 verified) and Ninja 1.12+ (Ninja 1.13 verified)
+- **GUI Framework**: Qt 6.8.2 MSVC 2022 x64 (`QtCore`, `QtGui`, `QtWidgets`, `QtOpenGL`, `QtOpenGLWidgets`)
+- **Python (Optional, for documentation & PDF export only)**: Python 3.10+ with `matplotlib`, `numpy`, and `pypdf`
+
+### 1.1 Automated Non-Admin Qt 6 Installation
+If Qt 6.8.2 is not installed, install it without administrator rights via `aqtinstall`:
+```powershell
+pip install aqtinstall
+python -m aqt install-qt windows desktop 6.8.2 win64_msvc2022_64 -O C:\Qt
+```
 
 ---
 
-## 2. One-Click Command Line Scripts
+## 2. One-Click Command Pipeline
 
-The repository includes pre-configured, tested batch scripts located in `scripts/`:
+Automated batch wrappers in `scripts/` initialize the 64-bit MSVC environment (`vcvars64.bat`) automatically and execute all pipeline tasks:
 
-### 2.1 Build Release Binaries
+### 2.1 Compile Release Build
 ```cmd
 scripts\build_msvc.cmd Release
 ```
-This automatically invokes `vcvars64.bat`, configures CMake using the Ninja generator with `/std:c++17 /W4 /O2`, and compiles all targets:
-- `WorkbenchCore.lib`: Static numerical engine.
-- `WorkbenchApp.exe`: Desktop GUI application.
-- `Launch.exe`: Zero-dependency native Win32 starter.
-- 7 automated test executables in `bin/`.
+This configures CMake using Ninja and compiles `lib/WorkbenchCore.lib`, `bin/WorkbenchApp.exe`, `Launch.exe`, and all 7 standalone test binaries.
 
 ### 2.2 Run Automated CTest Suite
 ```cmd
 scripts\test_msvc.cmd Release
 ```
-Executes all 7 test suites via CTest with detailed output.
+Executes all 7 test suites via CTest with `--output-on-failure`. Expected duration is ~7 seconds.
 
-### 2.3 Package Standalone Distribution
+### 2.3 Package Standalone Distribution Archive
 ```cmd
 scripts\package_msvc.cmd CandidateID
 ```
-Bundles the application using `windeployqt`, includes VC CRT DLLs, data, docs, results, Git commit bundle, generates `CandidateID_Workbench.zip` in `release/`, and outputs `CandidateID_Workbench.sha256`.
+This automated pipeline:
+1. Deploys required Qt shared libraries (`Qt6Core.dll`, `Qt6Gui.dll`, `platforms/qwindows.dll`, etc.) via `windeployqt`.
+2. Deploys Microsoft Visual C++ CRT Redistributable DLLs (`vcruntime140.dll`, `msvcp140.dll`).
+3. Packages source code, test suites, CSV outputs, and documentation.
+4. Generates an offline Git history bundle (`repository_bundle.bundle`).
+5. Compresses the entire tree into `release/CandidateID_Workbench.zip`.
+6. Computes and saves the SHA-256 hash into `release/CandidateID_Workbench.sha256`.
 
 ---
 
-## 3. CMake Presets Support
+## 3. Standalone End-User Launch Instructions
 
-The workbench includes standard `CMakePresets.json`:
+For end users and evaluators who do not wish to compile from source:
+1. Extract `release/CandidateID_Workbench.zip` into any directory on Windows 11 x64.
+2. Double-click [`Launch.exe`](file:///D:/PASS%20Science%20Works/dist/UnifiedEngineeringWorkbench/Launch.exe).
+3. The application opens immediately. **No command prompt window appears, no administrator rights are requested, and no Internet connection is required.**
 
-```cmd
-:: Configure and build using presets
-cmake --preset msvc-x64-release
-cmake --build --preset msvc-x64-release
-ctest --preset msvc-x64-release
+---
+
+## 4. CMake Presets for IDEs (VS Code / Visual Studio)
+
+The repository provides [`CMakePresets.json`](file:///D:/PASS%20Science%20Works/CMakePresets.json):
+```powershell
+# Configure using preset
+cmake --preset msvc-release
+
+# Build using preset
+cmake --build --preset msvc-release
+
+# Test using preset
+ctest --preset msvc-release
 ```
-
----
-
-## 4. One-Click IDE Execution (VS Code / Antigravity)
-
-The repository provides `.vscode/launch.json` and `.vscode/tasks.json`:
-1. Open the project folder in VS Code / Antigravity.
-2. Press **Ctrl+Shift+B** to execute the default `Build Workbench (MSVC Release)` task.
-3. Press **F5** to start debugging `Launch.exe` or `WorkbenchApp.exe`.
+In VS Code, press `Ctrl+Shift+B` to trigger the default build task configured in [`.vscode/tasks.json`](file:///D:/PASS%20Science%20Works/.vscode/tasks.json).

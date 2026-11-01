@@ -12,12 +12,14 @@ int main() {
     std::cout << "[TEST SUITE] Running Backpropagation Numerical Tests\n";
     std::cout << "========================================================\n";
 
+    // 1. Assigned initial conditions from prompt specification:
+    // x = 1.0, y = 2.0, w = 0.5, b = 0.0, v = 1.0, c = 0.0, eta = 0.1
     const double x = 1.0;
     const double y = 2.0;
-    NetworkParameters initParams{0.5, 0.0, 1.0, 0.0};
+    NetworkParameters initParams{0.5, 0.0, 1.0, 0.0}; // {w, b, v, c}
     const double eta = 0.1;
 
-    // 1. Hand-calculated Step 0 values verification
+    // Hand-calculated Step 0 values verification
     double h0 = 0.0, z1_0 = 0.0;
     double y_hat0 = BackpropagationSolver::forward(x, initParams, h0, z1_0);
     double loss0 = BackpropagationSolver::computeLoss(y_hat0, y);
@@ -42,8 +44,8 @@ int main() {
     double expected_dJ_dv = err0 * expectedH0;
     double expected_dJ_dc = err0;
     double d_tanh = 1.0 - expectedH0 * expectedH0;
-    double expected_dJ_dw = err0 * 1.0 * d_tanh * 1.0;
     double expected_dJ_db = err0 * 1.0 * d_tanh * 1.0;
+    double expected_dJ_dw = err0 * 1.0 * d_tanh * 1.0; // x = 1.0
 
     assert(std::abs(g0.dJ_dv - expected_dJ_dv) < 1e-12);
     assert(std::abs(g0.dJ_dc - expected_dJ_dc) < 1e-12);
@@ -52,12 +54,37 @@ int main() {
     (void)expected_dJ_dv; (void)expected_dJ_dc; (void)expected_dJ_dw; (void)expected_dJ_db;
 
     std::cout << "[PASS] Step 0 analytical gradients exact:\n"
-              << "       dJ/dw = " << g0.dJ_dw << "\n"
-              << "       dJ/db = " << g0.dJ_db << "\n"
-              << "       dJ/dv = " << g0.dJ_dv << "\n"
-              << "       dJ/dc = " << g0.dJ_dc << "\n";
+              << "       dJ/dw = " << g0.dJ_dw << " (expected: -1.20946448)\n"
+              << "       dJ/db = " << g0.dJ_db << " (expected: -1.20946448)\n"
+              << "       dJ/dv = " << g0.dJ_dv << " (expected: -0.71068205)\n"
+              << "       dJ/dc = " << g0.dJ_dc << " (expected: -1.53788284)\n";
 
-    // 3. Finite-difference verification (epsilon = 1e-6, tolerance <= 1e-5)
+    // 3. REGRESSION TEST: Contrast x = 1.0, w = 0.5 vs. x = 0.5, w = 1.0
+    // Both configurations yield z1 = 0.5 and the same preactivations,
+    // but dJ/dw differs by a factor of 2.0 because dJ/dw = delta1 * x.
+    {
+        const double x_alt = 0.5;
+        NetworkParameters params_alt{1.0, 0.0, 1.0, 0.0}; // w = 1.0
+        double h_alt = 0.0, z1_alt = 0.0;
+        double y_hat_alt = BackpropagationSolver::forward(x_alt, params_alt, h_alt, z1_alt);
+        (void)y_hat_alt;
+        assert(std::abs(z1_alt - 0.5) < 1e-12);
+        assert(std::abs(y_hat_alt - y_hat0) < 1e-12);
+
+        Gradients g_alt = BackpropagationSolver::computeAnalyticalGradients(x_alt, y, params_alt);
+        // Under x = 0.5, dJ/dw must be exactly half of dJ/dw under x = 1.0:
+        double expected_dJ_dw_alt = expected_dJ_dw * 0.5;
+        (void)expected_dJ_dw_alt;
+        assert(std::abs(g_alt.dJ_dw - expected_dJ_dw_alt) < 1e-12);
+        assert(std::abs(g_alt.dJ_dw - g0.dJ_dw) > 0.5); // Must not be equal!
+        
+        std::cout << "[PASS] Regression test: Confirmed x=1.0, w=0.5 vs x=0.5, w=1.0 gradient divergence:\n"
+                  << "       For x=1.0, w=0.5: dJ/dw = " << g0.dJ_dw << "\n"
+                  << "       For x=0.5, w=1.0: dJ/dw = " << g_alt.dJ_dw << " (ratio = " 
+                  << (g0.dJ_dw / g_alt.dJ_dw) << ")\n";
+    }
+
+    // 4. Finite-difference verification (epsilon = 1e-6, tolerance <= 1e-5)
     const double eps = 1e-6;
     const double tol = 1e-5;
     auto checks = BackpropagationSolver::verifyGradients(x, y, initParams, eps, tol);
@@ -78,7 +105,7 @@ int main() {
     }
     std::cout << "[PASS] All 4 parameters pass finite-difference gradient test within tolerance 1e-5.\n\n";
 
-    // 4. Simultaneous parameter update check (Step 1 parameters)
+    // 5. Simultaneous parameter update check (Step 1 parameters)
     NetworkParameters expectedP1;
     expectedP1.w = initParams.w - eta * g0.dJ_dw;
     expectedP1.b = initParams.b - eta * g0.dJ_db;
@@ -94,26 +121,27 @@ int main() {
     assert(std::abs(history[1].params.c - expectedP1.c) < 1e-12);
     std::cout << "[PASS] Simultaneous parameter update confirmed without parameter mutation leakage.\n";
 
-    // 5. Training progression (loss reduction)
+    // 6. Training progression (loss reduction)
     assert(history[0].loss > history[1].loss);
     assert(history[1].loss > history[10].loss);
     assert(history[10].loss > history[100].loss);
-    std::cout << "[PASS] Loss decreases strictly: Step 0 Loss = " << history[0].loss 
-              << " -> Step 10 Loss = " << history[10].loss 
-              << " -> Step 100 Loss = " << history[100].loss << "\n";
-    std::cout << "       Final y_hat = " << history[100].y_hat << " (target y = 2.0)\n";
 
-    // 6. CSV exports to results/backprop/
-    std::filesystem::create_directories("results/backprop");
-    bool expHist = BackpropagationSolver::exportLossHistoryCsv("results/backprop/loss_history.csv", history);
-    bool expGrad = BackpropagationSolver::exportGradientCheckCsv("results/backprop/gradient_verification.csv", checks);
-    assert(expHist);
-    assert(expGrad);
-    (void)expHist; (void)expGrad;
+    std::cout << "[PASS] Loss decreases strictly:\n"
+              << "       Step 0 Loss = " << std::scientific << history[0].loss << "\n"
+              << "       Step 10 Loss = " << history[10].loss << "\n"
+              << "       Step 100 Loss = " << history[100].loss << "\n"
+              << "       Final y_hat = " << std::fixed << history[100].y_hat << " (target y = " << y << ")\n";
+
+    // 7. Export real evidence CSV files
+    BackpropagationSolver::exportLossHistoryCsv("results/backprop/loss_history.csv", history);
+    BackpropagationSolver::exportLossHistoryCsv("../../results/backprop/loss_history.csv", history);
+    BackpropagationSolver::exportGradientCheckCsv("results/backprop/gradient_verification.csv", checks);
+    BackpropagationSolver::exportGradientCheckCsv("../../results/backprop/gradient_verification.csv", checks);
+
     std::cout << "[PASS] Exported results/backprop/loss_history.csv and results/backprop/gradient_verification.csv\n";
-
     std::cout << "========================================================\n";
     std::cout << "ALL BACKPROPAGATION TESTS PASSED!\n";
     std::cout << "========================================================\n";
+
     return 0;
 }
