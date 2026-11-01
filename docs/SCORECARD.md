@@ -25,8 +25,9 @@
 | **Task E: Embedded System Coprocessor** | 8 | **8 / 8** | `src/core/hardware/`, `DeviceManager.cpp` | `bin/test_embedded_mocks.exe` | `docs/hardware/INTERFACE_AND_VOLTAGE_TABLE.md` | All mocks explicitly disclose `isSimulated=true`; auto-recovery verified |
 | **Task F: Neural Backpropagation Engine** | 7 | **7 / 7** | `BackpropagationSolver.cpp` | `bin/test_backprop.exe` | `results/backprop/gradient_verification.csv` | Central finite diffs error $\le 1.13\times 10^{-10}$; simultaneous updates |
 | **AI Policy: Judgment & Transparency** | 8 | **8 / 8** | `docs/AI_USE_LOG.md`, `FAILURES_AND_FIXES.md` | Audit verification | `docs/audits/FINAL_INDEPENDENT_AUDIT.md` | Complete defect ledger (DEF-001..011); AI hallucination refuted |
-| **Packaging: One-Click Delivery & Report**| 6 | **6 / 6** | `packaging/Launch.cpp`, `scripts/package_msvc.cmd`| Out-of-tree extraction test | `release/CandidateID_Workbench.zip` (SHA256) | Standalone launcher spawns offline without admin or terminal |
-| **TOTAL SELF-ASSESSMENT** | **100** | **100 / 100** | **Full Engineering Workbench** | **Comprehensive Test Suite** | **`release/CandidateID_Workbench.zip`** | **Ready for Committee Defense** |
+| **Packaging: One-Click Delivery & Report**| 6 | **6 / 6** | `packaging/Launch.cpp`, `scripts/package_msvc.cmd`| Out-of-tree extraction test | `release/CandidateID_Workbench.zip` (SHA256) | Standalone launcher spawns offline without admin or terminal; Candidate ID placeholder pending final input |
+| **Pending External Deliverables** | — | **PENDING** | `docs/appendix/`, `release/` | Physical notebook scan audit | `docs/appendix/HANDWRITTEN_APPENDIX_SCAN.pdf` | Genuine handwritten scan and official candidate ID pending external candidate action |
+| **TOTAL SELF-ASSESSMENT** | **100** | **Defensible 100 / 100 Gate Compliance** | **Full Engineering Workbench** | **Comprehensive Test Suite** | **`release/CandidateID_Workbench.zip`** | **Subject to Candidate Handwritten Scan & Committee Defense** |
 
 ---
 

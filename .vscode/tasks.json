@@ -2,6 +2,20 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "Run Packaged Workbench (Launch.exe)",
+      "type": "shell",
+      "command": "powershell.exe -NoProfile -Command \"Start-Process '${workspaceFolder}/dist/UnifiedEngineeringWorkbench/Launch.exe'\"",
+      "problemMatcher": [],
+      "detail": "Launches the packaged standalone Launch.exe without requiring C++ debugging extensions"
+    },
+    {
+      "label": "Run Packaged WorkbenchApp (Direct)",
+      "type": "shell",
+      "command": "powershell.exe -NoProfile -Command \"Start-Process '${workspaceFolder}/dist/UnifiedEngineeringWorkbench/bin/WorkbenchApp.exe' -WorkingDirectory '${workspaceFolder}/dist/UnifiedEngineeringWorkbench/bin'\"",
+      "problemMatcher": [],
+      "detail": "Runs the packaged Qt application directly from dist/bin"
+    },
+    {
       "label": "Build Workbench (Release)",
       "type": "shell",
       "command": "powershell.exe -ExecutionPolicy Bypass -File ${workspaceFolder}/scripts/build.ps1 -Config Release",
@@ -15,7 +29,10 @@
       "label": "Run Tests (CTest)",
       "type": "shell",
       "command": "powershell.exe -ExecutionPolicy Bypass -File ${workspaceFolder}/scripts/test.ps1 -Config Release",
-      "group": "test",
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
       "problemMatcher": []
     },
     {

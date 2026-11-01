@@ -36,7 +36,7 @@ This configures CMake using Ninja and compiles `lib/WorkbenchCore.lib`, `bin/Wor
 ```cmd
 scripts\test_msvc.cmd Release
 ```
-Executes all 7 test suites via CTest with `--output-on-failure`. Expected duration is ~7 seconds.
+Executes all 7 test suites via CTest with `--output-on-failure`. Expected duration is ~0.45 seconds.
 
 ### 2.3 Package Standalone Distribution Archive
 ```cmd
@@ -44,7 +44,7 @@ scripts\package_msvc.cmd CandidateID
 ```
 This automated pipeline:
 1. Deploys required Qt shared libraries (`Qt6Core.dll`, `Qt6Gui.dll`, `platforms/qwindows.dll`, etc.) via `windeployqt`.
-2. Deploys Microsoft Visual C++ CRT Redistributable DLLs (`vcruntime140.dll`, `msvcp140.dll`).
+2. Deploys complete Microsoft Visual C++ CRT Redistributable DLLs (`msvcp140.dll`, `msvcp140_2.dll`, `vcruntime140.dll`, `vcruntime140_1.dll`, `msvcp140_atomic_wait.dll`, etc.).
 3. Packages source code, test suites, CSV outputs, and documentation.
 4. Generates an offline Git history bundle (`repository_bundle.bundle`).
 5. Compresses the entire tree into `release/CandidateID_Workbench.zip`.
@@ -74,4 +74,24 @@ cmake --build --preset msvc-release
 # Test using preset
 ctest --preset msvc-release
 ```
-In VS Code, press `Ctrl+Shift+B` to trigger the default build task configured in [`.vscode/tasks.json`](file:///D:/PASS%20Science%20Works/.vscode/tasks.json).
+
+---
+
+## 5. VS Code & Antigravity IDE Integration & Extension Prerequisites
+
+The repository includes pre-configured `.vscode/launch.json` and `.vscode/tasks.json` for one-action execution:
+
+### 5.1 One-Action Launch Configurations
+In VS Code / Antigravity, open the Run & Debug pane (`Ctrl+Shift+D`):
+- **`Run Packaged WorkbenchApp (Direct GUI)`**: Launches `dist/UnifiedEngineeringWorkbench/bin/WorkbenchApp.exe` directly with full Qt runtime environment.
+- **`Run Packaged Launch.exe (Standalone Win32)`**: Launches the standalone root `Launch.exe` wrapper.
+- **`Debug Local Build (build/Release)`**: Automatically triggers the build task and attaches the debugger to `build/Release/bin/WorkbenchApp.exe`.
+
+### 5.2 Extension Prerequisites
+- **For F5 Debugging (`type: "cppvsdbg"`)**:
+  - Requires the **C/C++ extension for Visual Studio Code** (`ms-vscode.cpptools` from Microsoft).
+  - This provides the native Windows MSVC debugger engine.
+- **For One-Click Run Without Extensions**:
+  - Open `Terminal -> Run Task...` (`Ctrl+Shift+P` -> `Tasks: Run Task`).
+  - Select **`Run Packaged Workbench (Launch.exe)`** or **`Run Packaged WorkbenchApp (Direct)`**.
+  - This launches the exact packaged binary via PowerShell background process with **zero extensions required**.

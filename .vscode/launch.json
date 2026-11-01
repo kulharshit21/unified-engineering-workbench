@@ -2,7 +2,29 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Launch Unified Workbench (Release)",
+      "name": "Run Packaged WorkbenchApp (Direct GUI)",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/dist/UnifiedEngineeringWorkbench/bin/WorkbenchApp.exe",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/dist/UnifiedEngineeringWorkbench/bin",
+      "environment": [],
+      "console": "internalConsole"
+    },
+    {
+      "name": "Run Packaged Launch.exe (Standalone Win32)",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/dist/UnifiedEngineeringWorkbench/Launch.exe",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/dist/UnifiedEngineeringWorkbench",
+      "environment": [],
+      "console": "internalConsole"
+    },
+    {
+      "name": "Debug Local Build (build/Release)",
       "type": "cppvsdbg",
       "request": "launch",
       "program": "${workspaceFolder}/build/Release/bin/WorkbenchApp.exe",
@@ -12,17 +34,6 @@
       "environment": [],
       "console": "internalConsole",
       "preLaunchTask": "Build Workbench (Release)"
-    },
-    {
-      "name": "Run Packaged Launch.exe",
-      "type": "cppvsdbg",
-      "request": "launch",
-      "program": "${workspaceFolder}/dist/UnifiedEngineeringWorkbench/Launch.exe",
-      "args": [],
-      "stopAtEntry": false,
-      "cwd": "${workspaceFolder}/dist/UnifiedEngineeringWorkbench",
-      "environment": [],
-      "console": "internalConsole"
     }
   ]
 }
