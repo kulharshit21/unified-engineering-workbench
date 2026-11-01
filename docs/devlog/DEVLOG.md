@@ -147,3 +147,106 @@
   * Numerical Agreement: Max absolute delta between serial and 4-worker parallel is $0.0000\times 10^{-15\circ}\text{C}$ (well below $10^{-8\circ}\text{C}$ threshold).
   * 5/5 automated CTest targets passed 100%.
 * **Next Step**: Implement Task E — Host-Connected Embedded System Integration Design and C++ Mock Device Adapters.
+
+
+---
+
+## Milestone 5: Embedded Integration Mocks, Architecture & Automatic Fault Recovery
+* **Timestamp**: 2026-11-01 20:12 IST
+* **Phase**: Phase 5 — Embedded Integration (Task E)
+* **Objective**: Design complete host-connected embedded architecture for Raspberry Pi Pico (RP2040), Digilent Arty A7-35T (Artix-7), and Digilent JTAG-HS2 adapter; specify 13-pin voltage and interface table; implement C++ `IDeviceAdapter` and mock adapters with configurable telemetry, timeout fault injection, and automatic 3-retry recovery.
+* **Files Created / Modified**:
+  * `src/core/hardware/IDeviceAdapter.hpp`
+  * `src/core/hardware/McuMockAdapter.hpp`, `src/core/hardware/McuMockAdapter.cpp`
+  * `src/core/hardware/FpgaMockAdapter.hpp`, `src/core/hardware/FpgaMockAdapter.cpp`
+  * `src/core/hardware/JtagMockAdapter.hpp`, `src/core/hardware/JtagMockAdapter.cpp`
+  * `src/core/hardware/DeviceManager.hpp`, `src/core/hardware/DeviceManager.cpp`
+  * `tests/unit/test_embedded_mocks.cpp`
+  * `docs/EMBEDDED_ARCHITECTURE.md`, `docs/INTERFACE_AND_VOLTAGE_TABLE.md`, `docs/HARDWARE_SAFETY_AND_LIMITATIONS.md`
+* **Architecture Decisions**:
+  * `IDeviceAdapter` abstract base class isolates physical transport from user interface.
+  * Explicit `isSimulated = true` flag prevents any false claims of physical hardware presence.
+  * Structured 3-retry recovery sequence: flush FIFOs $\to$ pulse reset $\to$ re-synchronize baud framing $\to$ verify telemetry handshake.
+* **Execution Commands**:
+  * `cmd.exe /c ".\scripts\build_msvc.cmd Debug"`
+  * `cmd.exe /c ".\scripts\test_msvc.cmd Debug"`
+* **Real Test Results**:
+  * All 3 mock adapters registered and retrieved by `deviceId`.
+  * Simulated telemetry validated within physical bounds (Pico temp $32.4^\circ\text{C}$, supply $3.31\text{V}$; Arty A7 die temp $41.8^\circ\text{C}$, VCCINT $1.00\text{V}$; JTAG-HS2 VREF $3.31\text{V}$).
+  * Fault injection triggered `ConnectionStatus::TimedOut` with invalid packet flag.
+  * Recovery sequence cleanly re-synchronized communication, restoring `ConnectionStatus::Connected`.
+  * 6/6 automated CTest targets passed 100%.
+* **Next Step**: Implement Task F — Handwritten Backpropagation Engine, Analytical Gradients, and Central Finite-Difference Verification.
+
+---
+
+## Milestone 6: Neural Backpropagation Engine, Simultaneous Updates & Finite Differences
+* **Timestamp**: 2026-11-01 20:15 IST
+* **Phase**: Phase 6 — Neural Optimization (Task F)
+* **Objective**: Implement single-neuron artificial neural network ($z_1 = wx+b$, $h=\tanh(z_1)$, $\hat{y}=vh+c$, $J=0.5(\hat{y}-y)^2$) in pure C++ without autodiff; evaluate exact analytical gradients via multivariate chain rule; enforce simultaneous parameter updates using evaluated original parameter values; verify via central finite differences ($\epsilon = 10^{-6}$, $|\delta| \le 10^{-5}$); run 100-step training; provide derivation guide and paper scan checklist.
+* **Files Created / Modified**:
+  * `src/core/neural/BackpropagationSolver.hpp`, `src/core/neural/BackpropagationSolver.cpp`
+  * `tests/numerical/test_backprop.cpp`
+  * `docs/BACKPROP_DERIVATION_GUIDE.md`, `docs/HANDWRITTEN_APPENDIX_CHECKLIST.md`
+  * `results/backprop/loss_history.csv`, `results/backprop/gradient_verification.csv`
+* **Architecture Decisions**:
+  * Complete analytical derivation directly in pure C++ standard library.
+  * All 4 parameter gradients ($w, b, v, c$) computed before updating any weight or bias.
+  * Central difference formula with $O(\epsilon^2)$ truncation error used for rigorous assertion checking.
+* **Execution Commands**:
+  * `cmd.exe /c ".\scripts\build_msvc.cmd Debug"`
+  * `.\build\Debug\bin\test_backprop.exe`
+* **Real Test Results**:
+  * Step 0 hand-calculated values verified: $z_1 = 0.5, h = 0.46211716, \hat{y} = 0.46211716, J = 1.1825418$.
+  * Analytical gradients verified: $dJ/dw = -1.2094645, dJ/db = -1.2094645, dJ/dv = -0.7106820, dJ/dc = -1.5378828$.
+  * Central finite differences: Max error across all 4 parameters is $1.13 \times 10^{-10}$ (exceeding $\le 10^{-5}$ threshold).
+  * Monotonic loss decay: $J^{(0)} = 1.182542 \to J^{(10)} = 1.0211 \times 10^{-2} \to J^{(100)} = 1.7026 \times 10^{-20}$.
+  * Final predicted output: $\hat{y} = 2.00000000$ (target $y = 2.0$).
+* **Next Step**: Implement Task A & 3D Viewport — Integrated Qt 6 desktop interface with 5 dedicated views.
+
+---
+
+## Milestone 7: Integrated Qt 6 Desktop Interface, 3D Viewport & Custom Plotting Engine
+* **Timestamp**: 2026-11-01 20:25 IST
+* **Phase**: Phase 7 — Desktop UI & Viewport (Tasks A–F)
+* **Objective**: Build unified desktop workstation in Qt 6 Widgets; implement custom hardware-accelerated 2D scientific plotting widget (`PlotWidget`); implement 3D orbital viewport with Lambertian lighting, Turbo/Jet scalar colormap, Cartesian tripod, temperature legend in °C, and screen-space click-to-inspect nearest-node picking (`OpenGLViewport`); build 5 dedicated views (`GeometryView`, `ThermalView`, `PerformanceView`, `HardwareView`, `BackpropView`); integrate into `MainWindow`.
+* **Files Created / Modified**:
+  * `src/app/widgets/PlotWidget.hpp`, `src/app/widgets/PlotWidget.cpp`
+  * `src/app/visualization/OpenGLViewport.hpp`, `src/app/visualization/OpenGLViewport.cpp`
+  * `src/app/widgets/GeometryView.hpp`, `src/app/widgets/GeometryView.cpp`
+  * `src/app/widgets/ThermalView.hpp`, `src/app/widgets/ThermalView.cpp`
+  * `src/app/widgets/PerformanceView.hpp`, `src/app/widgets/PerformanceView.cpp`
+  * `src/app/widgets/HardwareView.hpp`, `src/app/widgets/HardwareView.cpp`
+  * `src/app/widgets/BackpropView.hpp`, `src/app/widgets/BackpropView.cpp`
+  * `src/app/widgets/MainWindow.hpp`, `src/app/widgets/MainWindow.cpp`
+* **Architecture Decisions**:
+  * Value-semantic data transfers between UI views and core solvers preserve complete separation.
+  * Custom `PlotWidget` using `QPainter` with antialiasing avoids GPL charting dependencies.
+  * Orbital camera with pitch clamping ($-89^\circ$ to $+89^\circ$) prevents gimbal lock.
+* **Execution Commands**:
+  * `cmd.exe /c ".\scripts\build_msvc.cmd Release"`
+  * `cmd.exe /c ".\scripts\test_msvc.cmd Release"`
+* **Real Test Results**:
+  * Release build succeeded with zero warnings and zero errors under `/W4`.
+  * All 7 automated CTest targets passed 100% in 6.97s.
+  * Process alive test confirmed: `WorkbenchApp.exe` initialized, created GUI window, and ran smoothly.
+* **Next Step**: Implement Phase 8 & 9 — Standalone Release Packaging, Comprehensive 6-page Technical Report, and Acceptance Audits.
+
+---
+
+## Milestone 8: One-Click Standalone Windows 11 Packaging & Deliverable Distribution
+* **Timestamp**: 2026-11-01 20:30 IST
+* **Phase**: Phase 8 — Packaging & Release Pipeline
+* **Objective**: Bundle the Release binaries, Qt 6 runtime libraries (via `windeployqt`), MSVC CRT DLLs, native Win32 `Launch.exe` starter, synthetic CAD/ANSYS datasets, empirical verification results, complete documentation, and offline Git commit history bundle into `CandidateID_Workbench.zip`; generate SHA256 checksum; execute out-of-tree acceptance test.
+* **Files Created / Modified**:
+  * `scripts/package_msvc.cmd`
+  * `release/CandidateID_Workbench.zip` (29.80 MB)
+  * `release/CandidateID_Workbench.sha256`
+  * `README.md`, `docs/PROJECT_OVERVIEW.md`, `docs/TEST_PLAN.md`, `docs/TEST_RESULTS.md`
+  * `docs/DEMO_WALKTHROUGH.md`, `docs/OWNERSHIP_STATEMENT.md`, `docs/EFFORT_LOG.csv`, `docs/SCORECARD.md`
+  * `docs/reports/FINAL_TECHNICAL_REPORT.md`
+* **Real Test Results**:
+  * `CandidateID_Workbench.zip` created ($29.80\text{ MB}$).
+  * SHA256: `FD7036A55F1EE3C911D5253F54BEBD8E8CBB94C49C5992878D8D4E4F4D16FC2E`.
+  * Out-of-tree standalone execution gate verified: `dist/UnifiedEngineeringWorkbench/Launch.exe` spawned `WorkbenchApp.exe` (PID 38688) cleanly without console or terminal prompt.
+* **Next Step**: Phase 9 — Final Rubric Audit, Empirical Plot Rendering, PDF Export, and Milestone Closure.

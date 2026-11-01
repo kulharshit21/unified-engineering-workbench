@@ -1,0 +1,56 @@
+name: Windows 11 MSVC CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout Source Code
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Set up MSVC Developer Command Prompt
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: x64
+
+    - name: Install Ninja Build Tool
+      uses: seanmiddleditch/gha-setup-ninja@master
+
+    - name: Install Qt 6.8.2 (MSVC 2022 x64)
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: '6.8.2'
+        host: 'windows'
+        target: 'desktop'
+        arch: 'win64_msvc2022_64'
+        modules: 'qtbase qtsvg'
+        cache: true
+
+    - name: Configure CMake (Release)
+      run: |
+        cmake -B build/Release -G Ninja `
+          -DCMAKE_BUILD_TYPE=Release `
+          -DCMAKE_PREFIX_PATH="${{ env.Qt6_DIR }}" `
+          -DCMAKE_CXX_STANDARD=17
+
+    - name: Build All Targets (WorkbenchCore, WorkbenchApp, Launch, Tests)
+      run: |
+        cmake --build build/Release --config Release
+
+    - name: Run Automated CTest Suite
+      run: |
+        cd build/Release
+        ctest --output-on-failure -C Release
+
+    - name: Verify Launch.exe Executable Presence
+      run: |
+        Test-Path "build/Release/bin/Launch.exe"
+        Test-Path "build/Release/bin/WorkbenchApp.exe"
