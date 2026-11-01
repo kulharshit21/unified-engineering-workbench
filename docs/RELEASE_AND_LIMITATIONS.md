@@ -102,8 +102,8 @@ Both binaries were audited using MSVC `dumpbin /dependents` to verify that all n
 | **`Launch.exe`** | None required (pure Win32 C++) | `KERNEL32.dll`, `USER32.dll`, Universal CRT (`api-ms-win-crt-*`) | **100% Resolved** |
 | **`WorkbenchApp.exe`** | `Qt6Core.dll`, `Qt6Gui.dll`, `Qt6Widgets.dll`, `Qt6OpenGLWidgets.dll`, `msvcp140.dll`, `msvcp140_2.dll`, `vcruntime140.dll`, `vcruntime140_1.dll`, `msvcp140_atomic_wait.dll` | `KERNEL32.dll`, `USER32.dll`, `SHELL32.dll`, Universal CRT | **100% Resolved** |
 
-### 4.3 Clean-Environment Isolation Test
-Execution was verified in an environment-scrubbed context with system `PATH` cleared:
-1. `bin\WorkbenchApp.exe` and `Launch.exe` resolve all Qt and C++ runtime DLLs from their immediate folder, eliminating the need for pre-installed Qt, Python, MSVC redistributables, or administrative privileges.
-2. Software OpenGL fallback (`opengl32sw.dll`) is bundled to guarantee 3D rendering even on virtualized Windows instances without hardware GPU acceleration.
-3. Multiple launches execute and exit with zero orphaned background processes or file locks.
+### 4.3 Development-Machine Isolation Test vs. Clean-Machine Limitation
+1. **Development-Machine Isolation**: Execution was verified in an out-of-tree extraction folder (`%TEMP%\CleanWorkbenchTest`) with `PATH` cleared. Binaries resolve Qt and C++ runtime DLLs from their immediate `bin\` folder, and `scripts/audit_deps.cmd` confirms all non-OS dynamic libraries are present in the package.
+2. **Clean-Machine Boundary Disclosed**: Clearing `PATH` on a developer workstation does not isolate the application from `C:\Windows\System32`. While all MSVC VC145 CRT DLLs (`msvcp140*.dll`, `vcruntime140*.dll`, `concrt140.dll`) and Qt libraries are bundled locally to satisfy dynamic loader resolution, true bare-metal verification on a pristine factory-clean Windows machine without developer tools remains an external test (Windows Sandbox is not supported on Windows 11 Home).
+3. Software OpenGL fallback (`opengl32sw.dll`) is bundled to guarantee 3D rendering even on virtualized Windows instances without hardware GPU acceleration.
+4. Multiple launches execute and exit with zero orphaned background processes or file locks.

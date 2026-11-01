@@ -2,7 +2,7 @@
 ## Two-Page Notebook Transcription Template
 
 > [!NOTE]
-> Transcribe the two pages below onto physical paper using black or blue pen. Maintain clear mathematical layout, boxed results, and sign at the bottom of Page 2 before scanning to `HANDWRITTEN_APPENDIX_SCAN.pdf`.
+> Transcribe the two pages below onto physical paper using black or blue pen. Maintain clear mathematical layout and boxed results (maximum two pages) before scanning to `HANDWRITTEN_APPENDIX_SCAN.pdf`. No personal signature is required by the assignment specification.
 
 ---
 
@@ -130,6 +130,4 @@ $$\frac{\partial J}{\partial \theta_i} \approx \frac{J(\theta_i + \epsilon) - J(
 | $c$ | $-1.53788284$ | $-1.53788284$ | $1.12 \times 10^{-10}$ | $< 10^{-5}$ | **PASS** |
 
 ---
-
-**Candidate Signature**: ____________________________________  
-**Verification Date**: ______________________________________
+*(End of Page 2 — Maximum Two Pages)*

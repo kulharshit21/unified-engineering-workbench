@@ -17,9 +17,8 @@ In strict accordance with the PASS Science Works assignment rules and academic i
 
 ## Instructions for Candidate
 
-1. Take two clean, unlined or lined A4 sheets.
-2. Transcribe **Page 1** and **Page 2** exactly as laid out in [`HANDWRITTEN_APPENDIX_GUIDE.md`](./HANDWRITTEN_APPENDIX_GUIDE.md).
-3. Include your handwritten signature and date in the bottom sign-off block.
-4. Scan the two pages at 300 DPI into a single PDF titled `HANDWRITTEN_APPENDIX_SCAN.pdf`.
-5. Place `HANDWRITTEN_APPENDIX_SCAN.pdf` into this directory (`docs/appendix/`).
-6. Re-run `scripts\package_msvc.cmd <YourCandidateID>` to produce the final submitted ZIP archive.
+1. Take two clean, unlined or lined A4 sheets (maximum two pages).
+2. Transcribe **Page 1** and **Page 2** exactly as laid out in [`HANDWRITTEN_APPENDIX_GUIDE.md`](./HANDWRITTEN_APPENDIX_GUIDE.md). (No personal signature is required by the assignment specification).
+3. Scan the two pages at 300 DPI into a single PDF titled `HANDWRITTEN_APPENDIX_SCAN.pdf`.
+4. Place `HANDWRITTEN_APPENDIX_SCAN.pdf` into this directory (`docs/appendix/`).
+5. Re-run `scripts\package_msvc.cmd <YourCandidateID>` to produce the final submitted ZIP archive.
