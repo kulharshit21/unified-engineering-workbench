@@ -60,6 +60,10 @@ copy /y "%ROOTDIR%\CMakeLists.txt" "%DISTDIR%\"
 copy /y "%ROOTDIR%\README.md" "%DISTDIR%\"
 copy /y "%ROOTDIR%\LICENSE" "%DISTDIR%\"
 
+rem 6b. Generate Git repository bundle for offline commit history inspection
+echo [PACKAGE] Bundling Git commit history...
+git bundle create "%DISTDIR%\repository_bundle.bundle" --all >nul 2>&1
+
 rem 7. Compress into ZIP archive via PowerShell
 set ZIPNAME=%CANDIDATE_ID%_Workbench.zip
 set ZIPPATH=%RELEASEDIR%\%ZIPNAME%
