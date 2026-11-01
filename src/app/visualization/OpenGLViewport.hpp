@@ -1,6 +1,6 @@
 #pragma once
 
-#include <QOpenGLWidget>
+#include <QWidget>
 #include <QMatrix4x4>
 #include <QVector3D>
 #include <QPoint>
@@ -9,7 +9,7 @@
 
 namespace Workbench::App {
 
-class OpenGLViewport : public QOpenGLWidget {
+class OpenGLViewport : public QWidget {
     Q_OBJECT
 
 public:

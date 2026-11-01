@@ -59,6 +59,7 @@ if exist "%ROOTDIR%\.vscode" xcopy /e /i /y "%ROOTDIR%\.vscode" "%DISTDIR%\.vsco
 copy /y "%ROOTDIR%\CMakeLists.txt" "%DISTDIR%\"
 copy /y "%ROOTDIR%\README.md" "%DISTDIR%\"
 copy /y "%ROOTDIR%\LICENSE" "%DISTDIR%\"
+if exist "%ROOTDIR%\CMakePresets.json" copy /y "%ROOTDIR%\CMakePresets.json" "%DISTDIR%\"
 if exist "%ROOTDIR%\FINAL_SUBMISSION_GATE.md" copy /y "%ROOTDIR%\FINAL_SUBMISSION_GATE.md" "%DISTDIR%\"
 
 rem 6b. Generate Git repository bundle for offline commit history inspection

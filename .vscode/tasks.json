@@ -4,21 +4,21 @@
     {
       "label": "Run Packaged Workbench (Launch.exe)",
       "type": "shell",
-      "command": "powershell.exe -NoProfile -Command \"Start-Process '${workspaceFolder}/dist/UnifiedEngineeringWorkbench/Launch.exe'\"",
+      "command": "powershell.exe -NoProfile -Command \"if (Test-Path '${workspaceFolder}/Launch.exe') { Start-Process '${workspaceFolder}/Launch.exe' } elseif (Test-Path '${workspaceFolder}/dist/UnifiedEngineeringWorkbench/Launch.exe') { Start-Process '${workspaceFolder}/dist/UnifiedEngineeringWorkbench/Launch.exe' } else { Write-Error 'Launch.exe not found. Run Package task first.' }\"",
       "problemMatcher": [],
-      "detail": "Launches the packaged standalone Launch.exe without requiring C++ debugging extensions"
+      "detail": "Launches the packaged standalone Launch.exe in extracted archive or dist root without requiring C++ debugging extensions"
     },
     {
       "label": "Run Packaged WorkbenchApp (Direct)",
       "type": "shell",
-      "command": "powershell.exe -NoProfile -Command \"Start-Process '${workspaceFolder}/dist/UnifiedEngineeringWorkbench/bin/WorkbenchApp.exe' -WorkingDirectory '${workspaceFolder}/dist/UnifiedEngineeringWorkbench/bin'\"",
+      "command": "powershell.exe -NoProfile -Command \"if (Test-Path '${workspaceFolder}/bin/WorkbenchApp.exe') { Start-Process '${workspaceFolder}/bin/WorkbenchApp.exe' -WorkingDirectory '${workspaceFolder}' } elseif (Test-Path '${workspaceFolder}/dist/UnifiedEngineeringWorkbench/bin/WorkbenchApp.exe') { Start-Process '${workspaceFolder}/dist/UnifiedEngineeringWorkbench/bin/WorkbenchApp.exe' -WorkingDirectory '${workspaceFolder}/dist/UnifiedEngineeringWorkbench' } else { Write-Error 'WorkbenchApp.exe not found. Build first.' }\"",
       "problemMatcher": [],
-      "detail": "Runs the packaged Qt application directly from dist/bin"
+      "detail": "Runs the packaged Qt application directly with proper working directory"
     },
     {
       "label": "Build Workbench (Release)",
       "type": "shell",
-      "command": "powershell.exe -ExecutionPolicy Bypass -File ${workspaceFolder}/scripts/build.ps1 -Config Release",
+      "command": "cmd.exe /c \"${workspaceFolder}/scripts/build_msvc.cmd\" Release",
       "group": {
         "kind": "build",
         "isDefault": true
@@ -28,7 +28,7 @@
     {
       "label": "Run Tests (CTest)",
       "type": "shell",
-      "command": "powershell.exe -ExecutionPolicy Bypass -File ${workspaceFolder}/scripts/test.ps1 -Config Release",
+      "command": "cmd.exe /c \"${workspaceFolder}/scripts/test_msvc.cmd\" Release",
       "group": {
         "kind": "test",
         "isDefault": true
@@ -38,7 +38,7 @@
     {
       "label": "Package Standalone Distribution",
       "type": "shell",
-      "command": "powershell.exe -ExecutionPolicy Bypass -File ${workspaceFolder}/scripts/package.ps1",
+      "command": "cmd.exe /c \"${workspaceFolder}/scripts/package_msvc.cmd\" CandidateID",
       "problemMatcher": []
     }
   ]

@@ -39,9 +39,13 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
 
     // 3. Build command line including any passed arguments
     std::wstring cmdLine = L"\"" + targetExe + L"\"";
+    bool isSmokeTest = false;
     if (pCmdLine && wcslen(pCmdLine) > 0) {
         cmdLine += L" ";
         cmdLine += pCmdLine;
+        if (wcsstr(pCmdLine, L"smoke-test") != nullptr) {
+            isSmokeTest = true;
+        }
     }
 
     std::vector<wchar_t> cmdLineMutable(cmdLine.begin(), cmdLine.end());
@@ -53,8 +57,8 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     si.cb = sizeof(si);
     ZeroMemory(&pi, sizeof(pi));
 
-    // Target working directory is where target executable lives (or bin)
-    std::wstring workDir = targetExe.substr(0, targetExe.find_last_of(L"\\/"));
+    // Target working directory is rootDir (where data/ and docs/ live alongside bin/)
+    std::wstring workDir = rootDir;
 
     // 4. Create child process without opening terminal
     if (!CreateProcessW(
@@ -74,7 +78,38 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
         return 3;
     }
 
-    // Close process handles; launcher can exit cleanly while app runs
+    // 5. If smoke-test was requested, wait for child termination and forward child exit code
+    if (isSmokeTest) {
+        DWORD waitRes = WaitForSingleObject(pi.hProcess, 15000);
+        if (waitRes == WAIT_TIMEOUT) {
+            TerminateProcess(pi.hProcess, 1);
+            CloseHandle(pi.hProcess);
+            CloseHandle(pi.hThread);
+            return 4; // Timed out
+        }
+        DWORD childExitCode = 0;
+        GetExitCodeProcess(pi.hProcess, &childExitCode);
+        CloseHandle(pi.hProcess);
+        CloseHandle(pi.hThread);
+        return static_cast<int>(childExitCode);
+    }
+
+    // For normal launch, verify child process didn't instantly crash
+    DWORD waitEarly = WaitForSingleObject(pi.hProcess, 500);
+    if (waitEarly == WAIT_OBJECT_0) {
+        DWORD earlyExit = 0;
+        GetExitCodeProcess(pi.hProcess, &earlyExit);
+        CloseHandle(pi.hProcess);
+        CloseHandle(pi.hThread);
+        if (earlyExit != 0) {
+            std::wstring msg = L"WorkbenchApp.exe exited unexpectedly on startup with code " + std::to_wstring(earlyExit) + L".";
+            MessageBoxW(NULL, msg.c_str(), L"PASS Science Works — Launch Error", MB_ICONERROR | MB_OK);
+            return static_cast<int>(earlyExit);
+        }
+        return 0;
+    }
+
+    // Normal running process: close handles and exit cleanly
     CloseHandle(pi.hProcess);
     CloseHandle(pi.hThread);
     return 0;

@@ -1,6 +1,7 @@
-#include <cassert>
+#include "TestAssert.hpp"
 #include <iostream>
 #include <stdexcept>
+#include <vector>
 #include "geometry/TemperatureCsvParser.hpp"
 
 using namespace Workbench::Core::Geometry;
@@ -18,11 +19,11 @@ int main() {
         "3,1.0,1.0,0.0,20.0\n";
 
     TemperatureDataset ds = TemperatureCsvParser::parseString(validCsv);
-    assert(ds.nodeCount() == 3);
-    assert(ds.minTemperature == 20.0);
-    assert(ds.maxTemperature == 100.0);
-    assert(std::abs(ds.meanTemperature - 56.6666667) < 1e-4);
-    assert(ds.duplicateCount == 0);
+    TEST_ASSERT(ds.nodeCount() == 3);
+    TEST_ASSERT(ds.minTemperature == 20.0);
+    TEST_ASSERT(ds.maxTemperature == 100.0);
+    TEST_ASSERT(std::abs(ds.meanTemperature - 56.6666667) < 1e-4);
+    TEST_ASSERT(ds.duplicateCount == 0);
     std::cout << "[PASS] Valid CSV parsed with correct statistics.\n";
 
     // 2. Empty CSV rejection
@@ -33,7 +34,7 @@ int main() {
         caught = true;
         std::cout << "[PASS] Empty CSV rejected: " << e.what() << "\n";
     }
-    assert(caught);
+    TEST_ASSERT(caught);
 
     // 3. Invalid header (wrong column count)
     caught = false;
@@ -43,7 +44,7 @@ int main() {
         caught = true;
         std::cout << "[PASS] Incomplete header rejected: " << e.what() << "\n";
     }
-    assert(caught);
+    TEST_ASSERT(caught);
 
     // 4. Invalid header column names
     caught = false;
@@ -53,7 +54,7 @@ int main() {
         caught = true;
         std::cout << "[PASS] Incorrect column names rejected: " << e.what() << "\n";
     }
-    assert(caught);
+    TEST_ASSERT(caught);
 
     // 5. Non-numeric data
     caught = false;
@@ -63,7 +64,7 @@ int main() {
         caught = true;
         std::cout << "[PASS] Non-numeric entry rejected: " << e.what() << "\n";
     }
-    assert(caught);
+    TEST_ASSERT(caught);
 
     // 6. Non-finite values (NaN / Inf)
     caught = false;
@@ -73,7 +74,7 @@ int main() {
         caught = true;
         std::cout << "[PASS] NaN temperature rejected: " << e.what() << "\n";
     }
-    assert(caught);
+    TEST_ASSERT(caught);
 
     // 7. Duplicate Node ID Handling Policy
     const std::string duplicateIdCsv =
@@ -83,9 +84,9 @@ int main() {
         "2,1.0,0.0,0.0,20.0\n";
 
     TemperatureDataset dupDs = TemperatureCsvParser::parseString(duplicateIdCsv);
-    assert(dupDs.nodeCount() == 2); // only unique nodes 1 and 2
-    assert(dupDs.duplicateCount == 1);
-    assert(dupDs.nodes[0].temperatureC == 100.0); // first occurrence retained
+    TEST_ASSERT(dupDs.nodeCount() == 2); // only unique nodes 1 and 2
+    TEST_ASSERT(dupDs.duplicateCount == 1);
+    TEST_ASSERT(dupDs.nodes[0].temperatureC == 100.0); // first occurrence retained
     std::cout << "[PASS] Duplicate node ID policy (retain first, track duplicate count) verified.\n";
 
     // 8. Degenerate range handling (all temperatures equal)
@@ -94,8 +95,8 @@ int main() {
         "1,0.0,0.0,0.0,25.0\n"
         "2,1.0,0.0,0.0,25.0\n";
     TemperatureDataset uniDs = TemperatureCsvParser::parseString(uniformTempCsv);
-    assert(uniDs.minTemperature == 25.0);
-    assert(uniDs.maxTemperature == 25.0);
+    TEST_ASSERT(uniDs.minTemperature == 25.0);
+    TEST_ASSERT(uniDs.maxTemperature == 25.0);
     std::cout << "[PASS] Degenerate temperature range (T_min == T_max) handled without divide-by-zero.\n";
 
     // 9. Load synthetic_ansys_temperatures.csv from disk
@@ -107,10 +108,10 @@ int main() {
     for (const auto &p : paths) {
         try {
             TemperatureDataset fileDs = TemperatureCsvParser::parseFile(p);
-            assert(fileDs.nodeCount() == 27);
-            assert(fileDs.minTemperature == 20.0);
-            assert(fileDs.maxTemperature == 100.0);
-            assert(fileDs.bounds.isValid());
+            TEST_ASSERT(fileDs.nodeCount() == 27);
+            TEST_ASSERT(fileDs.minTemperature == 20.0);
+            TEST_ASSERT(fileDs.maxTemperature == 100.0);
+            TEST_ASSERT(fileDs.bounds.isValid());
             std::cout << "[PASS] Loaded " << p << " successfully: "
                       << fileDs.nodeCount() << " nodes, Range: ["
                       << fileDs.minTemperature << " C, "
@@ -122,7 +123,7 @@ int main() {
             // try next path
         }
     }
-    assert(loaded);
+    TEST_ASSERT(loaded);
 
     std::cout << "========================================================\n";
     std::cout << "ALL TEMPERATURE CSV PARSER TESTS PASSED!\n";

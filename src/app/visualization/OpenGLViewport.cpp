@@ -11,7 +11,7 @@
 namespace Workbench::App {
 
 OpenGLViewport::OpenGLViewport(QWidget *parent)
-    : QOpenGLWidget(parent) {
+    : QWidget(parent) {
     setMinimumSize(400, 400);
     setMouseTracking(true);
 }

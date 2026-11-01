@@ -108,16 +108,16 @@ Timings and scaling factors recorded in `results/performance/summary.csv` and `s
 
 | Workload Configuration | Workers ($p$) | Median Time (ms) | Mean Time (ms) | Min Time (ms) | Speedup ($S_p = T_1 / T_p$) | Efficiency ($E_p$) | Max Delta vs Serial |
 |:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| **Standard (1,000 cases)** | **1** | $1.85$ | $1.87$ | $1.79$ | $1.00\times$ | 100.0% | $0.0000 \times 10^{-15\circ}\text{C}$ |
-| Standard (1,000 cases) | **2** | $1.24$ | $1.33$ | $1.15$ | $1.49\times$ | 74.5% | $0.0000 \times 10^{-15\circ}\text{C}$ |
-| Standard (1,000 cases) | **4** | $0.85$ | $0.90$ | $0.80$ | **$2.19\times$** | 54.8% | $0.0000 \times 10^{-15\circ}\text{C}$ |
-| **Extended (10,000 cases)**| **1** | $20.41$ | $20.62$ | $19.25$ | $1.00\times$ | 100.0% | $0.0000 \times 10^{-15\circ}\text{C}$ |
-| Extended (10,000 cases)| **2** | $11.25$ | $11.14$ | $10.30$ | **$1.81\times$** | **90.7%** | $0.0000 \times 10^{-15\circ}\text{C}$ |
-| Extended (10,000 cases)| **4** | $6.54$ | $6.57$ | $6.11$ | **$3.12\times$** | **78.0%** | $0.0000 \times 10^{-15\circ}\text{C}$ |
-| Extended (10,000 cases)| **8** | $4.67$ | $4.57$ | $3.96$ | **$4.37\times$** | **54.6%** | $0.0000 \times 10^{-15\circ}\text{C}$ |
+| **Standard (1,000 cases)** | **1** | $1.77$ | $1.76$ | $1.68$ | $1.00\times$ | 100.0% | $0.0000 \times 10^{-15\circ}\text{C}$ |
+| Standard (1,000 cases) | **2** | $1.14$ | $1.27$ | $1.03$ | $1.55\times$ | 77.7% | $0.0000 \times 10^{-15\circ}\text{C}$ |
+| Standard (1,000 cases) | **4** | $0.71$ | $0.77$ | $0.66$ | **$2.52\times$** | 62.9% | $0.0000 \times 10^{-15\circ}\text{C}$ |
+| **Extended (10,000 cases)**| **1** | $18.65$ | $18.71$ | $18.19$ | $1.00\times$ | 100.0% | $0.0000 \times 10^{-15\circ}\text{C}$ |
+| Extended (10,000 cases)| **2** | $10.46$ | $10.40$ | $9.73$ | **$1.78\times$** | **89.1%** | $0.0000 \times 10^{-15\circ}\text{C}$ |
+| Extended (10,000 cases)| **4** | $5.78$ | $5.91$ | $5.67$ | **$3.23\times$** | **80.7%** | $0.0000 \times 10^{-15\circ}\text{C}$ |
+| Extended (10,000 cases)| **8** | $4.35$ | $4.30$ | $3.89$ | **$4.29\times$** | **53.6%** | $0.0000 \times 10^{-15\circ}\text{C}$ |
 
 ### 4.3 Scalability & Numerical Agreement Insights
-1. **Overhead Amortization**: For the 1,000-case workload (1.85 ms serial), thread pool wakeups and queue locks consume ~0.4 ms, limiting 4-worker efficiency to $54.8\%$. Expanding to 10,000 cases (20.41 ms serial) amortizes these fixed synchronization costs, lifting 4-worker efficiency to **$78.0\%$** and 2-worker efficiency to **$90.7\%$**.
+1. **Overhead Amortization**: For the 1,000-case workload (1.77 ms serial), thread pool wakeups and queue locks consume ~0.4 ms, limiting 4-worker efficiency to $62.9\%$. Expanding to 10,000 cases (18.65 ms serial) amortizes these fixed synchronization costs, lifting 4-worker efficiency to **$80.7\%$** and 2-worker efficiency to **$89.1\%$**.
 2. **Deterministic Invariance**: The maximum absolute temperature delta between serial ($p=1$) and parallel ($p=4, 8$) solutions across all nodal evaluations was identically zero ($0.0000 \times 10^{-15\circ}\text{C}$), completely satisfying the required $|\Delta T| \le 10^{-8\circ}\text{C}$ tolerance threshold.
 
 ---

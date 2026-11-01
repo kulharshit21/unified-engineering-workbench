@@ -5,9 +5,24 @@
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QHeaderView>
+#include <QCoreApplication>
 #include <filesystem>
 
 namespace Workbench::App {
+
+static std::string resolveAssetPath(const std::string &relPath) {
+    if (std::filesystem::exists(relPath)) return relPath;
+    std::string upOne = "../" + relPath;
+    if (std::filesystem::exists(upOne)) return upOne;
+    std::string upTwo = "../../" + relPath;
+    if (std::filesystem::exists(upTwo)) return upTwo;
+    std::string appDir = QCoreApplication::applicationDirPath().toStdString();
+    std::string fromApp = appDir + "/" + relPath;
+    if (std::filesystem::exists(fromApp)) return fromApp;
+    std::string fromParent = appDir + "/../" + relPath;
+    if (std::filesystem::exists(fromParent)) return fromParent;
+    return relPath;
+}
 
 GeometryView::GeometryView(QWidget *parent)
     : QWidget(parent) {
@@ -121,8 +136,8 @@ void GeometryView::setupUi() {
 
 void GeometryView::loadDefaultSyntheticData() {
     // Attempt loading packaged synthetic test assets
-    const std::string defaultStl = "data/geometry/sample_bracket.stl";
-    const std::string defaultCsv = "data/thermal/synthetic_ansys_temperatures.csv";
+    const std::string defaultStl = resolveAssetPath("data/geometry/sample_bracket.stl");
+    const std::string defaultCsv = resolveAssetPath("data/thermal/synthetic_ansys_temperatures.csv");
 
     if (std::filesystem::exists(defaultStl)) {
         try {
@@ -157,7 +172,8 @@ void GeometryView::loadDefaultSyntheticData() {
 }
 
 void GeometryView::onLoadStlClicked() {
-    QString path = QFileDialog::getOpenFileName(this, "Select ASCII STL File", "data/geometry", "STL Files (*.stl);;All Files (*.*)");
+    QString initialDir = QString::fromStdString(resolveAssetPath("data/geometry"));
+    QString path = QFileDialog::getOpenFileName(this, "Select ASCII STL File", initialDir, "STL Files (*.stl);;All Files (*.*)");
     if (path.isEmpty()) return;
 
     try {
@@ -177,7 +193,8 @@ void GeometryView::onLoadStlClicked() {
 }
 
 void GeometryView::onLoadCsvClicked() {
-    QString path = QFileDialog::getOpenFileName(this, "Select ANSYS Nodal CSV", "data/thermal", "CSV Files (*.csv);;All Files (*.*)");
+    QString initialDir = QString::fromStdString(resolveAssetPath("data/thermal"));
+    QString path = QFileDialog::getOpenFileName(this, "Select ANSYS Nodal CSV", initialDir, "CSV Files (*.csv);;All Files (*.*)");
     if (path.isEmpty()) return;
 
     try {

@@ -1,7 +1,8 @@
-#include <cassert>
+#include "TestAssert.hpp"
 #include <iostream>
 #include <fstream>
 #include <filesystem>
+#include <vector>
 #include "parallel/BenchmarkEngine.hpp"
 
 namespace fs = std::filesystem;
@@ -38,7 +39,7 @@ int main() {
         );
 
         // Assert strict numerical agreement <= 1e-8 deg C
-        assert(w.maxDeltaVsSerial <= 1e-8);
+        TEST_ASSERT(w.maxDeltaVsSerial <= 1e-8);
     }
     std::cout << "---------------------------------\n";
     std::cout << "[PASS] Serial / Parallel numerical agreement verified (all deltas <= 1e-8 C).\n\n";
@@ -63,7 +64,7 @@ int main() {
             w.speedup, w.efficiency, w.maxDeltaVsSerial
         );
 
-        assert(w.maxDeltaVsSerial <= 1e-8);
+        TEST_ASSERT(w.maxDeltaVsSerial <= 1e-8);
     }
     std::cout << "---------------------------------\n";
     std::cout << "[PASS] Extended workload scaling and numerical agreement verified.\n";

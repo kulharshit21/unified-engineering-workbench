@@ -1,4 +1,4 @@
-#include <cassert>
+#include "TestAssert.hpp"
 #include <iostream>
 #include <cmath>
 #include <iomanip>
@@ -24,13 +24,12 @@ int main() {
     double y_hat0 = BackpropagationSolver::forward(x, initParams, h0, z1_0);
     double loss0 = BackpropagationSolver::computeLoss(y_hat0, y);
 
-    assert(std::abs(z1_0 - 0.5) < 1e-12);
+    TEST_ASSERT_NEAR(z1_0, 0.5, 1e-12);
     double expectedH0 = std::tanh(0.5);
-    assert(std::abs(h0 - expectedH0) < 1e-12);
-    assert(std::abs(y_hat0 - expectedH0) < 1e-12);
+    TEST_ASSERT_NEAR(h0, expectedH0, 1e-12);
+    TEST_ASSERT_NEAR(y_hat0, expectedH0, 1e-12);
     double expectedLoss0 = 0.5 * (expectedH0 - 2.0) * (expectedH0 - 2.0);
-    assert(std::abs(loss0 - expectedLoss0) < 1e-12);
-    (void)expectedLoss0;
+    TEST_ASSERT_NEAR(loss0, expectedLoss0, 1e-12);
 
     std::cout << "[PASS] Step 0 forward values exact:\n"
               << "       z1 = " << z1_0 << "\n"
@@ -47,11 +46,10 @@ int main() {
     double expected_dJ_db = err0 * 1.0 * d_tanh * 1.0;
     double expected_dJ_dw = err0 * 1.0 * d_tanh * 1.0; // x = 1.0
 
-    assert(std::abs(g0.dJ_dv - expected_dJ_dv) < 1e-12);
-    assert(std::abs(g0.dJ_dc - expected_dJ_dc) < 1e-12);
-    assert(std::abs(g0.dJ_dw - expected_dJ_dw) < 1e-12);
-    assert(std::abs(g0.dJ_db - expected_dJ_db) < 1e-12);
-    (void)expected_dJ_dv; (void)expected_dJ_dc; (void)expected_dJ_dw; (void)expected_dJ_db;
+    TEST_ASSERT_NEAR(g0.dJ_dv, expected_dJ_dv, 1e-12);
+    TEST_ASSERT_NEAR(g0.dJ_dc, expected_dJ_dc, 1e-12);
+    TEST_ASSERT_NEAR(g0.dJ_dw, expected_dJ_dw, 1e-12);
+    TEST_ASSERT_NEAR(g0.dJ_db, expected_dJ_db, 1e-12);
 
     std::cout << "[PASS] Step 0 analytical gradients exact:\n"
               << "       dJ/dw = " << g0.dJ_dw << " (expected: -1.20946448)\n"
@@ -68,15 +66,14 @@ int main() {
         double h_alt = 0.0, z1_alt = 0.0;
         double y_hat_alt = BackpropagationSolver::forward(x_alt, params_alt, h_alt, z1_alt);
         (void)y_hat_alt;
-        assert(std::abs(z1_alt - 0.5) < 1e-12);
-        assert(std::abs(y_hat_alt - y_hat0) < 1e-12);
+        TEST_ASSERT_NEAR(z1_alt, 0.5, 1e-12);
+        TEST_ASSERT_NEAR(y_hat_alt, y_hat0, 1e-12);
 
         Gradients g_alt = BackpropagationSolver::computeAnalyticalGradients(x_alt, y, params_alt);
         // Under x = 0.5, dJ/dw must be exactly half of dJ/dw under x = 1.0:
         double expected_dJ_dw_alt = expected_dJ_dw * 0.5;
-        (void)expected_dJ_dw_alt;
-        assert(std::abs(g_alt.dJ_dw - expected_dJ_dw_alt) < 1e-12);
-        assert(std::abs(g_alt.dJ_dw - g0.dJ_dw) > 0.5); // Must not be equal!
+        TEST_ASSERT_NEAR(g_alt.dJ_dw, expected_dJ_dw_alt, 1e-12);
+        TEST_ASSERT(std::abs(g_alt.dJ_dw - g0.dJ_dw) > 0.5); // Must not be equal!
         
         std::cout << "[PASS] Regression test: Confirmed x=1.0, w=0.5 vs x=0.5, w=1.0 gradient divergence:\n"
                   << "       For x=1.0, w=0.5: dJ/dw = " << g0.dJ_dw << "\n"
@@ -100,8 +97,8 @@ int main() {
                   << std::noshowpos
                   << c.absoluteError << "   | "
                   << (c.passed ? "PASS" : "FAIL") << "\n";
-        assert(c.passed);
-        assert(c.absoluteError <= tol);
+        TEST_ASSERT(c.passed);
+        TEST_ASSERT(c.absoluteError <= tol);
     }
     std::cout << "[PASS] All 4 parameters pass finite-difference gradient test within tolerance 1e-5.\n\n";
 
@@ -113,18 +110,18 @@ int main() {
     expectedP1.c = initParams.c - eta * g0.dJ_dc;
 
     auto history = BackpropagationSolver::train(x, y, initParams, eta, 100);
-    assert(history.size() == 101); // 0 to 100
+    TEST_ASSERT(history.size() == 101); // 0 to 100
 
-    assert(std::abs(history[1].params.w - expectedP1.w) < 1e-12);
-    assert(std::abs(history[1].params.b - expectedP1.b) < 1e-12);
-    assert(std::abs(history[1].params.v - expectedP1.v) < 1e-12);
-    assert(std::abs(history[1].params.c - expectedP1.c) < 1e-12);
+    TEST_ASSERT_NEAR(history[1].params.w, expectedP1.w, 1e-12);
+    TEST_ASSERT_NEAR(history[1].params.b, expectedP1.b, 1e-12);
+    TEST_ASSERT_NEAR(history[1].params.v, expectedP1.v, 1e-12);
+    TEST_ASSERT_NEAR(history[1].params.c, expectedP1.c, 1e-12);
     std::cout << "[PASS] Simultaneous parameter update confirmed without parameter mutation leakage.\n";
 
     // 6. Training progression (loss reduction)
-    assert(history[0].loss > history[1].loss);
-    assert(history[1].loss > history[10].loss);
-    assert(history[10].loss > history[100].loss);
+    TEST_ASSERT(history[0].loss > history[1].loss);
+    TEST_ASSERT(history[1].loss > history[10].loss);
+    TEST_ASSERT(history[10].loss > history[100].loss);
 
     std::cout << "[PASS] Loss decreases strictly:\n"
               << "       Step 0 Loss = " << std::scientific << history[0].loss << "\n"

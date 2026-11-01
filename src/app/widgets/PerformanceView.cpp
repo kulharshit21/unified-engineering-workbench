@@ -10,13 +10,27 @@
 #include <thread>
 #include <fstream>
 
+Q_DECLARE_METATYPE(Workbench::Core::Parallel::BenchmarkSuiteResult)
+
 namespace Workbench::App {
 
 PerformanceView::PerformanceView(QWidget *parent)
     : QWidget(parent) {
+    qRegisterMetaType<Workbench::Core::Parallel::BenchmarkSuiteResult>("Workbench::Core::Parallel::BenchmarkSuiteResult");
     setupUi();
-    // Run an initial quick benchmark on load
+    // Start initial benchmark asynchronously in background thread so UI starts instantly
     onRunBenchmarkClicked();
+}
+
+PerformanceView::~PerformanceView() {
+    if (m_worker) {
+        if (m_worker->isRunning()) {
+            m_worker->requestInterruption();
+            m_worker->wait(3000);
+        }
+        delete m_worker;
+        m_worker = nullptr;
+    }
 }
 
 void PerformanceView::setupUi() {
@@ -67,12 +81,17 @@ void PerformanceView::setupUi() {
 
     m_progressBar = new QProgressBar(leftPanel);
     m_progressBar->setRange(0, 100);
-    m_progressBar->setValue(100);
+    m_progressBar->setValue(0);
     m_progressBar->setTextVisible(false);
     m_progressBar->setFixedHeight(6);
     leftLayout->addWidget(m_progressBar);
 
+    m_statusLabel = new QLabel("Ready.", leftPanel);
+    m_statusLabel->setStyleSheet("color: #70758a; font-size: 11px;");
+    leftLayout->addWidget(m_statusLabel);
+
     m_exportBtn = new QPushButton("Export Benchmark CSVs...", leftPanel);
+    m_exportBtn->setEnabled(false);
     connect(m_exportBtn, &QPushButton::clicked, this, &PerformanceView::onExportCsvClicked);
     leftLayout->addWidget(m_exportBtn);
 
@@ -98,21 +117,50 @@ void PerformanceView::setupUi() {
 }
 
 void PerformanceView::onRunBenchmarkClicked() {
+    if (m_worker && m_worker->isRunning()) {
+        return; // Already running
+    }
+
     m_runBtn->setEnabled(false);
-    m_progressBar->setRange(0, 0); // busy indicator
-    QApplication::processEvents();
+    m_exportBtn->setEnabled(false);
+    m_progressBar->setRange(0, 0); // Indeterminate marquee animation
+    m_statusLabel->setText("Running parallel benchmark in background worker...");
 
     int cases = m_spinCaseCount->value();
     int elements = m_spinElementCount->value();
     int reps = m_spinRepetitions->value();
 
-    m_lastResult = Core::Parallel::BenchmarkEngine::runSuite(cases, elements, {1, 2, 4}, reps, 42);
+    if (m_worker) {
+        m_worker->deleteLater();
+        m_worker = nullptr;
+    }
 
+    m_worker = new BenchmarkWorker(cases, elements, {1, 2, 4}, reps, 42, this);
+    connect(m_worker, &BenchmarkWorker::benchmarkFinished, this, &PerformanceView::onBenchmarkCompleted);
+    connect(m_worker, &BenchmarkWorker::benchmarkFailed, this, &PerformanceView::onBenchmarkFailed);
+    m_worker->start();
+}
+
+void PerformanceView::onBenchmarkCompleted(const Core::Parallel::BenchmarkSuiteResult &res) {
+    m_lastResult = res;
     m_progressBar->setRange(0, 100);
     m_progressBar->setValue(100);
+    m_statusLabel->setText(QString("Completed %1 cases across %2 worker configurations.")
+                               .arg(res.caseCount)
+                               .arg(res.workerResults.size()));
     m_runBtn->setEnabled(true);
+    m_exportBtn->setEnabled(true);
 
     updateUiWithResults(m_lastResult);
+}
+
+void PerformanceView::onBenchmarkFailed(const QString &errorMsg) {
+    m_progressBar->setRange(0, 100);
+    m_progressBar->setValue(0);
+    m_statusLabel->setText("Benchmark failed.");
+    m_runBtn->setEnabled(true);
+
+    QMessageBox::warning(this, "Benchmark Error", QString("Benchmark execution failed:\n%1").arg(errorMsg));
 }
 
 void PerformanceView::updateUiWithResults(const Core::Parallel::BenchmarkSuiteResult &res) {

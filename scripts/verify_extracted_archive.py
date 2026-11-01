@@ -54,7 +54,7 @@ def verify_extraction():
         return False
 
     # Check essential directories and files
-    required_entries = ['data', 'docs', 'src', 'tests', 'results', 'CMakeLists.txt', 'README.md', 'FINAL_SUBMISSION_GATE.md']
+    required_entries = ['data', 'docs', 'src', 'tests', 'results', 'CMakeLists.txt', 'CMakePresets.json', 'README.md', 'FINAL_SUBMISSION_GATE.md']
     for entry in required_entries:
         path = os.path.join(tmp_dir, entry)
         if not os.path.exists(path):
@@ -92,4 +92,5 @@ def verify_extraction():
     return True
 
 if __name__ == '__main__':
-    verify_extraction()
+    success = verify_extraction()
+    sys.exit(0 if success else 1)

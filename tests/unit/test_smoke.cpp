@@ -1,4 +1,4 @@
-#include <cassert>
+#include "TestAssert.hpp"
 #include <iostream>
 #include "core/CoreVersion.hpp"
 
@@ -8,9 +8,9 @@ int main() {
     std::string ver = Workbench::Core::getVersionString();
     std::string name = Workbench::Core::getProjectName();
 
-    assert(!ver.empty());
-    assert(!name.empty());
-    assert(name.find("PASS Science Works") != std::string::npos);
+    TEST_ASSERT(!ver.empty());
+    TEST_ASSERT(!name.empty());
+    TEST_ASSERT(name.find("PASS Science Works") != std::string::npos);
 
     std::cout << "[SMOKE TEST] Version: " << ver << "\n";
     std::cout << "[SMOKE TEST] Project: " << name << "\n";

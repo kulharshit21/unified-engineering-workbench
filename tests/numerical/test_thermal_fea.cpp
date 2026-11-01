@@ -1,8 +1,9 @@
-#include <cassert>
+#include "TestAssert.hpp"
 #include <iostream>
 #include <cmath>
 #include <fstream>
 #include <filesystem>
+#include <vector>
 #include "thermal/ThermalFeaSolver.hpp"
 #include "thermal/ThermalConvergence.hpp"
 
@@ -28,13 +29,13 @@ int main() {
     // 1. Boundary conditions and analytical values check
     // Analytical solution: T(x) = 100 - 80*x + (10000 / (2 * 10)) * x * (1 - x)
     //                           = 100 + 420*x - 500*x^2
-    assert(std::abs(solver.evaluateExact(0.0) - 100.0) < 1e-12);
-    assert(std::abs(solver.evaluateExact(1.0) - 20.0) < 1e-12);
+    TEST_ASSERT_NEAR(solver.evaluateExact(0.0), 100.0, 1e-12);
+    TEST_ASSERT_NEAR(solver.evaluateExact(1.0), 20.0, 1e-12);
     
     // Check internal profile and peak location (dT/dx = 420 - 1000x = 0 => x = 0.42 m, T = 188.2 C)
     double tPeak = solver.evaluateExact(0.42);
-    assert(std::abs(tPeak - 188.2) < 1e-12);
-    assert(tPeak > 100.0); // Heat generation creates internal temperature higher than boundaries
+    TEST_ASSERT_NEAR(tPeak, 188.2, 1e-12);
+    TEST_ASSERT(tPeak > 100.0); // Heat generation creates internal temperature higher than boundaries
     std::cout << "[PASS] Analytical solution T(x) = 100 + 420x - 500x^2 verified:\n"
               << "       T(0) = " << solver.evaluateExact(0.0) << " C\n"
               << "       T_peak(0.42) = " << tPeak << " C\n"
@@ -46,8 +47,8 @@ int main() {
     };
     double tBadRight = evaluateErroneousPolynomial(1.0);
     // Erroneous polynomial gives T(1) = -5 C, which violates T(1) = 20 C by 25 C
-    assert(std::abs(tBadRight - (-5.0)) < 1e-12);
-    assert(std::abs(tBadRight - 20.0) > 20.0);
+    TEST_ASSERT_NEAR(tBadRight, -5.0, 1e-12);
+    TEST_ASSERT(std::abs(tBadRight - 20.0) > 20.0);
     std::cout << "[PASS] Regression test: Erroneous polynomial (yielding T(1) = " 
               << tBadRight << " C) correctly rejected.\n";
 
@@ -56,9 +57,9 @@ int main() {
     // For assigned k=10, q=10000, e_mid(N=10) = (10000 / (8 * 10)) * (0.1)^2 = 125 * 0.01 = 1.25000000 C
     double badETheory10 = (5000.0 / (8.0 * 200.0)) * 0.01;
     double correctETheory10 = (10000.0 / (8.0 * 10.0)) * 0.01;
-    assert(std::abs(badETheory10 - 0.03125) < 1e-12);
-    assert(std::abs(correctETheory10 - 1.25000000) < 1e-12);
-    assert(std::abs(badETheory10 - correctETheory10) > 1.0);
+    TEST_ASSERT_NEAR(badETheory10, 0.03125, 1e-12);
+    TEST_ASSERT_NEAR(correctETheory10, 1.25000000, 1e-12);
+    TEST_ASSERT(std::abs(badETheory10 - correctETheory10) > 1.0);
     std::cout << "[PASS] Regression test: Erroneous parameter set (k=200, q=5000, e=" 
               << badETheory10 << " C) correctly distinguished from assigned specification (e="
               << correctETheory10 << " C).\n";
@@ -83,31 +84,29 @@ int main() {
         const auto &e = entries[i];
         double expected = expectedErrors[i];
         double delta = std::abs(e.maxMidpointError - expected);
-        (void)delta;
 
         std::printf(" %3d  | %8.4f | %22.8f | %12.8f | %6.2f | %8.4f\n",
                     N, e.elementLength, e.maxMidpointError, expected, e.errorRatio, e.convergenceOrder);
 
         // Assert midpoint error matches theoretical derivation within 1e-7 deg C
-        assert(delta < 1e-7);
+        TEST_ASSERT(delta < 1e-7);
 
         // Assert boundary conditions exactness on solved temperatures
         ThermalSolution sol = solver.solve(N);
-        assert(std::abs(sol.nodalTemperatures.front() - 100.0) < 1e-12);
-        assert(std::abs(sol.nodalTemperatures.back() - 20.0) < 1e-12);
+        TEST_ASSERT_NEAR(sol.nodalTemperatures.front(), 100.0, 1e-12);
+        TEST_ASSERT_NEAR(sol.nodalTemperatures.back(), 20.0, 1e-12);
 
         // Check 1D linear FEA nodal superconvergence: nodal error is zero to machine precision
         for (int node = 0; node <= N; ++node) {
             double xNode = sol.nodeCoordinates[node];
             double tExactNode = solver.evaluateExact(xNode);
-            (void)tExactNode;
-            assert(std::abs(sol.nodalTemperatures[node] - tExactNode) < 1e-10);
+            TEST_ASSERT_NEAR(sol.nodalTemperatures[node], tExactNode, 1e-10);
         }
 
         // Assert 4-fold error reduction when N doubles
         if (i > 0) {
-            assert(std::abs(e.errorRatio - 4.0) < 1e-3);
-            assert(std::abs(e.convergenceOrder - 2.0) < 1e-3);
+            TEST_ASSERT_NEAR(e.errorRatio, 4.0, 1e-3);
+            TEST_ASSERT_NEAR(e.convergenceOrder, 2.0, 1e-3);
         }
     }
     std::cout << "-------------------------\n";
@@ -123,7 +122,7 @@ int main() {
     } catch (const std::invalid_argument &) {
         caught = true;
     }
-    assert(caught);
+    TEST_ASSERT(caught);
     std::cout << "[PASS] Negative conductivity correctly rejected.\n";
 
     caught = false;
@@ -134,7 +133,7 @@ int main() {
     } catch (const std::invalid_argument &) {
         caught = true;
     }
-    assert(caught);
+    TEST_ASSERT(caught);
     std::cout << "[PASS] Zero rod length correctly rejected.\n";
 
     // 6. Export real verified evidence CSV files to results/thermal/

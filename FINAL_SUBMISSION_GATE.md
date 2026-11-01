@@ -74,6 +74,30 @@ Every requirement is classified below according to empirical evidence:
 - A global regex scan across all Markdown files in the repository confirmed that all machine-specific absolute paths (`file:///D:/PASS%20Science%20Works/...`, `C:\Users\kulha\...`) have been removed and replaced with clean, portable relative paths.
 - This ensures that evaluators unpacking the archive to any path on Windows 11 encounter zero broken links.
 
+### 2.8 Phase 16 Corrective Audit Closure (ChatGPT Deep Audit Response)
+1. **Active Release-Mode Assertions (`TEST_ASSERT`)**:
+   - Replaced all standard `<cassert>` `assert(...)` statements across all 7 test files with `TEST_ASSERT` (`tests/TestAssert.hpp`), ensuring active runtime checks regardless of `/DNDEBUG`.
+   - Introduced a deliberate failing assertion in `test_smoke.cpp` under Release build: actively caught failure, printed exact assertion expression, and exited with code 1. Restored passing test.
+2. **Asynchronous Multicore CPU Benchmarking**:
+   - Refactored `PerformanceView` with a background `QThread` worker (`BenchmarkWorker`). The UI main thread never blocks during execution; interactive progress bar and status feedback implemented; safe cancellation on widget destruction.
+3. **Sample Asset Resolution & Launcher Working Directory**:
+   - Implemented `resolveAssetPath` in `GeometryView.cpp` resolving assets across executable dir, parent dirs, and root.
+   - Updated `packaging/Launch.cpp` setting child process working directory to the installation root (where `data/` lives alongside `bin/`).
+   - Enhanced `Launch.exe`: under `--smoke-test`, launcher waits for child process termination and forwards child exit code.
+4. **Verified 3D Geometry CAD & Point Cloud Visualization**:
+   - Converted `OpenGLViewport` to `QWidget` with custom 3D projection, surface normal lighting, and painter's depth-sorted rendering.
+   - Verified that `window.grab()` accurately captures the 3D viewport without FBO blanking.
+   - Quantitative analysis confirmed **479,824 non-background visible rendering pixels**, 3,316 unique colors, 27 temperature nodes, colored coordinate tripod, and temperature colormap legend.
+5. **Exact Benchmark Synchronization**:
+   - Synchronized all timing figures across `README.md`, `docs/PERFORMANCE_RESULTS.md`, and `docs/reports/FINAL_TECHNICAL_REPORT.md` to match `results/performance/summary.csv` and `summary_extended.csv` down to the hundredth of a millisecond.
+6. **Verification Process Exit Codes**:
+   - Updated `scripts/verify_extracted_archive.py` with `sys.exit(0 if success else 1)` and checks for `CMakePresets.json`.
+7. **Typeset Mathematical Formulas in PDF Technical Report**:
+   - Enhanced `scripts/generate_pdf_report.py` with an offline mathematical typesetting engine converting LaTeX into clean HTML/Unicode with horizontal fraction bars, bracketed matrices, and greek symbols. Zero raw LaTeX commands in the generated PDF.
+8. **Dual-Target Editor Configurations & CMakePresets Packaging**:
+   - Updated `.vscode/launch.json` and `.vscode/tasks.json` to work seamlessly both from the repository root and directly inside the extracted archive root.
+   - Updated `scripts/package_msvc.cmd` to bundle `CMakePresets.json`.
+
 ---
 
 ## 3. Final Gate Verdict

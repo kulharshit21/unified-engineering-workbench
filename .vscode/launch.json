@@ -2,18 +2,29 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Run Packaged WorkbenchApp (Direct GUI)",
+      "name": "Run Packaged Launch.exe (Extracted Archive Root)",
       "type": "cppvsdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/dist/UnifiedEngineeringWorkbench/bin/WorkbenchApp.exe",
+      "program": "${workspaceFolder}/Launch.exe",
       "args": [],
       "stopAtEntry": false,
-      "cwd": "${workspaceFolder}/dist/UnifiedEngineeringWorkbench/bin",
+      "cwd": "${workspaceFolder}",
       "environment": [],
       "console": "internalConsole"
     },
     {
-      "name": "Run Packaged Launch.exe (Standalone Win32)",
+      "name": "Run Packaged WorkbenchApp (Extracted Archive bin/)",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/bin/WorkbenchApp.exe",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "console": "internalConsole"
+    },
+    {
+      "name": "Run Staged Package (Repository dist/)",
       "type": "cppvsdbg",
       "request": "launch",
       "program": "${workspaceFolder}/dist/UnifiedEngineeringWorkbench/Launch.exe",

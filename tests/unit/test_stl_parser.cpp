@@ -1,6 +1,7 @@
-#include <cassert>
+#include "TestAssert.hpp"
 #include <iostream>
 #include <stdexcept>
+#include <vector>
 #include "geometry/StlParser.hpp"
 
 using namespace Workbench::Core::Geometry;
@@ -23,13 +24,13 @@ int main() {
         "endsolid SimpleTetra\n";
 
     StlModel model = StlParser::parseString(validStl);
-    assert(model.solidName == "SimpleTetra");
-    assert(model.triangleCount() == 1);
-    assert(model.vertexCount() == 3);
-    assert(model.bounds.isValid());
-    assert(model.bounds.min.x == 0.0f && model.bounds.max.x == 1.0f);
-    assert(model.bounds.min.y == 0.0f && model.bounds.max.y == 1.0f);
-    assert(model.bounds.min.z == 0.0f && model.bounds.max.z == 0.0f);
+    TEST_ASSERT(model.solidName == "SimpleTetra");
+    TEST_ASSERT(model.triangleCount() == 1);
+    TEST_ASSERT(model.vertexCount() == 3);
+    TEST_ASSERT(model.bounds.isValid());
+    TEST_ASSERT(model.bounds.min.x == 0.0f && model.bounds.max.x == 1.0f);
+    TEST_ASSERT(model.bounds.min.y == 0.0f && model.bounds.max.y == 1.0f);
+    TEST_ASSERT(model.bounds.min.z == 0.0f && model.bounds.max.z == 0.0f);
     std::cout << "[PASS] Valid ASCII STL parsed with correct bounds.\n";
 
     // 2. Empty string rejection
@@ -40,7 +41,7 @@ int main() {
         caught = true;
         std::cout << "[PASS] Empty STL correctly rejected: " << e.what() << "\n";
     }
-    assert(caught);
+    TEST_ASSERT(caught);
 
     // 3. Malformed keyword (missing 'solid')
     caught = false;
@@ -50,7 +51,7 @@ int main() {
         caught = true;
         std::cout << "[PASS] Missing solid keyword correctly rejected: " << e.what() << "\n";
     }
-    assert(caught);
+    TEST_ASSERT(caught);
 
     // 4. Incomplete facet (only 2 vertices)
     const std::string malformedFacet = 
@@ -69,7 +70,7 @@ int main() {
         caught = true;
         std::cout << "[PASS] Incomplete facet (2 vertices) rejected: " << e.what() << "\n";
     }
-    assert(caught);
+    TEST_ASSERT(caught);
 
     // 5. Non-finite values (NaN / Inf)
     const std::string nanFacet = 
@@ -89,7 +90,7 @@ int main() {
         caught = true;
         std::cout << "[PASS] NaN vertex correctly rejected: " << e.what() << "\n";
     }
-    assert(caught);
+    TEST_ASSERT(caught);
 
     // 6. Load sample_bracket.stl from disk
     const std::vector<std::string> paths = {
@@ -100,9 +101,9 @@ int main() {
     for (const auto &p : paths) {
         try {
             StlModel bracket = StlParser::parseFile(p);
-            assert(bracket.triangleCount() == 12);
-            assert(bracket.vertexCount() == 36);
-            assert(bracket.bounds.isValid());
+            TEST_ASSERT(bracket.triangleCount() == 12);
+            TEST_ASSERT(bracket.vertexCount() == 36);
+            TEST_ASSERT(bracket.bounds.isValid());
             std::cout << "[PASS] Loaded " << p << " successfully: " 
                       << bracket.triangleCount() << " triangles, max extent: " 
                       << bracket.bounds.maxDimension() << " m\n";
@@ -112,7 +113,7 @@ int main() {
             // try next path
         }
     }
-    assert(loaded);
+    TEST_ASSERT(loaded);
 
     std::cout << "========================================================\n";
     std::cout << "ALL ASCII STL PARSER TESTS PASSED!\n";
