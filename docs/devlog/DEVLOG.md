@@ -88,3 +88,31 @@
   * Boundary values preserved exactly: $T(0) = 100.0^\circ\text{C}, T(L) = 20.0^\circ\text{C}$.
   * Both automated CTest targets (`test_smoke`, `test_thermal_fea`) passed 100%.
 * **Next Step**: Implement Task B — ASCII STL geometry parser and ANSYS nodal temperature CSV parser with unit tests and synthetic test datasets.
+
+---
+
+## Milestone 3: ASCII STL & ANSYS Temperature CSV Parsers with Negative Test Suite
+* **Timestamp**: 2026-11-01 20:05 IST
+* **Phase**: Phase 3 — File Import Core (Task B)
+* **Objective**: Implement robust C++17 parsers for ASCII STL geometry and ANSYS CSV nodal temperatures (`node_id,x_m,y_m,z_m,temperature_C`), including bounding box computation, non-finite checks (NaN/Inf), empty file handling, binary STL detection, duplicate node-ID resolution, and synthetic sample data generation.
+* **Files Created / Modified**:
+  * `src/core/geometry/GeometryTypes.hpp`
+  * `src/core/geometry/StlParser.hpp`, `src/core/geometry/StlParser.cpp`
+  * `src/core/geometry/TemperatureCsvParser.hpp`, `src/core/geometry/TemperatureCsvParser.cpp`
+  * `data/geometry/sample_bracket.stl`, `data/thermal/synthetic_ansys_temperatures.csv`
+  * `data/README.md`, `docs/DATA_PROVENANCE.md`
+  * `tests/unit/test_stl_parser.cpp`, `tests/unit/test_csv_parser.cpp`
+* **Architecture Decisions**:
+  * Pure standard library string parsing (`std::stod`, `std::stoi`, `std::isfinite`).
+  * Explicit duplicate node-ID policy: Retain first occurrence, record duplicate count, log warning.
+  * Degenerate range protection: $T_\text{min} == T_\text{max}$ handled without zero division.
+* **Execution Commands**:
+  * `cmd.exe /c ".\scripts\build_msvc.cmd Release"`
+  * `cmd.exe /c ".\scripts\test_msvc.cmd Release"`
+* **Real Test Results**:
+  * Valid ASCII STL parsed: 12 triangles, max extent 0.1 m.
+  * Negative STL tests passed: empty STL, missing 'solid', incomplete facet, and NaN vertex correctly rejected with descriptive exceptions.
+  * Valid CSV parsed: 27 nodes, range $[20^\circ\text{C}, 100^\circ\text{C}]$, mean $57.6852^\circ\text{C}$.
+  * Negative CSV tests passed: empty CSV, malformed header, non-numeric values, NaN values, duplicate IDs, and degenerate ranges correctly handled.
+  * 4/4 CTest suites passed 100%.
+* **Next Step**: Implement Task D — Multicore Parallel Batch Thermal Solves, Thread Pool, and Benchmarking Engine.

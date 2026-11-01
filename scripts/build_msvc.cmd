@@ -23,9 +23,9 @@ if errorlevel 1 (
 
 echo [BUILD] Compiling targets with Ninja...
 cmake --build "%BUILDDIR%" --config %CONFIG% -j
-if errorlevel 1 (
-    echo [ERROR] Build compilation failed.
-    exit /b 1
+if %ERRORLEVEL% NEQ 0 (
+    echo [ERROR] Build compilation failed with code %ERRORLEVEL%.
+    exit /b %ERRORLEVEL%
 )
 
 echo [BUILD] Build completed successfully.
