@@ -6,6 +6,7 @@
 #include <iomanip>
 #include <thread>
 #include <cstring>
+#include <stdexcept>
 
 #ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN
@@ -94,6 +95,15 @@ BenchmarkSuiteResult BenchmarkEngine::runSuite(
     uint32_t seed,
     std::atomic<bool> *cancelToken) {
 
+    // Reject invalid public API inputs before allocating or timing any work.
+    // Zero repetitions would otherwise dereference an empty timing vector.
+    if (caseCount <= 0 || meshElements <= 0 || repetitions <= 0 || workerCounts.empty()) {
+        throw std::invalid_argument("Benchmark requires positive cases, elements, repetitions, and worker counts.");
+    }
+    if (std::any_of(workerCounts.begin(), workerCounts.end(), [](size_t n) { return n == 0; })) {
+        throw std::invalid_argument("Benchmark worker count must be at least one.");
+    }
+
     BenchmarkSuiteResult suite;
     detectHostCpu(suite.cpuModel, suite.physicalCores, suite.logicalCores);
     suite.caseCount = caseCount;
@@ -135,6 +145,28 @@ BenchmarkSuiteResult BenchmarkEngine::runSuite(
     }
 
     double baselineMedianMs = 0.0;
+    // A parallel-only or out-of-order worker list still needs a timed
+    // serial baseline; otherwise reported speedup is incorrectly zero.
+    // This does not affect the normal {1,2,4} benchmark path.
+    if (workerCounts.front() != 1) {
+        std::vector<double> baselineTimes;
+        baselineTimes.reserve(static_cast<size_t>(repetitions));
+        for (int r = 0; r < repetitions; ++r) {
+            if (cancelToken && cancelToken->load(std::memory_order_relaxed)) {
+                suite.cancelled = true;
+                return suite;
+            }
+            const auto start = std::chrono::steady_clock::now();
+            (void)BatchSolver::solveSerial(cases, cancelToken);
+            const auto end = std::chrono::steady_clock::now();
+            if (cancelToken && cancelToken->load(std::memory_order_relaxed)) {
+                suite.cancelled = true;
+                return suite;
+            }
+            baselineTimes.push_back(std::chrono::duration<double, std::milli>(end - start).count());
+        }
+        baselineMedianMs = calculateMedian(baselineTimes);
+    }
 
     for (size_t workers : workerCounts) {
         // Cooperative cancellation check: before each worker configuration
