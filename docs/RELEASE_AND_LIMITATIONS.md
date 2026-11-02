@@ -39,7 +39,7 @@ graph TD
 
 | Item # | Verification Check | Requirement / Rule | Verification Evidence | Status |
 |:---:|:---|:---|:---|:---:|
-| **1** | Clean Release Build | Compiles warning-free with MSVC `/W4 /WX /O2` | `build_msvc.cmd Release` and CI build output; `/WX` is not enabled | **PASS** |
+| **1** | Clean Release Build | Builds Release with MSVC `/W4 /O2`; warnings are not treated as errors (`/WX` is not enabled) | `build_msvc.cmd Release` and CI build output; `/WX` is not enabled | **PASS** |
 | **2** | Automated Test Suites | 8 CTest suites pass, including the deliberate negative NaN test | `ctest --test-dir build/Release` (100%) | **PASS** |
 | **3** | Quadratic Thermal FEA | $p = 2.0000$ verified across $N=10, 20, 40, 80$ | `results/thermal/convergence.csv` | **PASS** |
 | **4** | Thermal BC Verification | $T(0)=100^\circ\text{C}, T(1)=20^\circ\text{C}, T(0.42)=188.2^\circ\text{C}$ | `results/thermal/temperature_profiles.csv` | **PASS** |
