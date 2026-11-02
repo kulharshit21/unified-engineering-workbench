@@ -2,6 +2,7 @@ import zipfile
 import os
 import shutil
 import tempfile
+import atexit
 import subprocess
 import time
 import sys
@@ -11,6 +12,8 @@ def verify_extraction():
     # Use a unique scratch directory; never remove a fixed user-visible
     # %TEMP% path that may contain unrelated files.
     tmp_dir = tempfile.mkdtemp(prefix='CleanWorkbenchTest_')
+    # Clean up even when a validation branch returns early.
+    atexit.register(shutil.rmtree, tmp_dir, ignore_errors=True)
 
     zip_path = os.path.abspath(f'release/{candidate_id}_Workbench.zip')
     print(f"Testing extraction from: {zip_path}")
