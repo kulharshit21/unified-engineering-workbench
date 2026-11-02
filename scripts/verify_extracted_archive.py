@@ -15,7 +15,8 @@ def verify_extraction():
     # Clean up even when a validation branch returns early.
     atexit.register(shutil.rmtree, tmp_dir, ignore_errors=True)
 
-    zip_path = os.path.abspath(f'release/{candidate_id}_Workbench.zip')
+    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+    zip_path = os.path.join(repo_root, 'release', f'{candidate_id}_Workbench.zip')
     print(f"Testing extraction from: {zip_path}")
     print(f"Target scratch directory: {tmp_dir}")
 
@@ -69,11 +70,31 @@ def verify_extraction():
 
     # Run Launch.exe --smoke-test
     print("Executing out-of-tree: Launch.exe --smoke-test")
-    p2 = subprocess.run([launcher, '--smoke-test'], cwd=tmp_dir, capture_output=True, text=True)
+    p2 = subprocess.run([launcher, '--smoke-test'], cwd=tmp_dir, capture_output=True, text=True, timeout=60)
     print(f"Launch.exe returncode: {p2.returncode}")
     if p2.returncode != 0:
         print(f"[FAIL] Launch.exe failed with code {p2.returncode}")
         return False
+
+    # Verify the checksum against the exact archive being inspected.
+    hash_path = os.path.join(repo_root, 'release', f'{candidate_id}_Workbench.sha256')
+    if not os.path.isfile(hash_path):
+        print('[FAIL] SHA-256 sidecar file missing.')
+        return False
+    import hashlib
+    with open(hash_path, encoding='ascii') as hfile:
+        recorded = hfile.read().strip().split()
+    if len(recorded) != 2 or recorded[1] != os.path.basename(zip_path):
+        print('[FAIL] SHA-256 sidecar filename or format mismatch.')
+        return False
+    digest = hashlib.sha256()
+    with open(zip_path, 'rb') as source:
+        for block in iter(lambda: source.read(1024 * 1024), b''):
+            digest.update(block)
+    if digest.hexdigest().lower() != recorded[0].lower():
+        print('[FAIL] SHA-256 digest mismatch.')
+        return False
+    print('[PASS] SHA-256 sidecar matches archive bytes.')
 
     # Check essential directories and files
     required_entries = ['data', 'docs', 'src', 'tests', 'results', 'CMakeLists.txt', 'CMakePresets.json', 'README.md', 'FINAL_SUBMISSION_GATE.md']
