@@ -2,9 +2,9 @@
 **Unified Engineering Workbench (R&D Internship 2026–2027)**
 
 - **Audit Execution Date**: 2026-11-02 06:15 IST
-- **Evaluated Commit**: `695b3d6` (`main`)
+- **Evaluated Commit**: `b742294` (`main`)
 - **Package Archive**: `release/CandidateID_Workbench.zip` (36.5 MB)
-- **Archive SHA-256**: `53956D17917478B0D257621A0880E41815D2CE6AA41DE1927DA9D92F22C92669`
+- **Archive SHA-256**: `038B32D0C702E7315E5E6BE7E26330D22F06E3AD4011D6684832C437348D3F74`
 - **Repository Remote**: `https://github.com/kulharshit21/unified-engineering-workbench.git` (Private)
 - **Host Audit System**: Windows 11 Home x64 (Build 26100), AMD Ryzen AI 9 HX 370 (12C / 24T), 32 GB RAM, NVIDIA RTX 5070 Ti
 - **Toolchain**: MSVC 19.51.36248.0 (VS 2026), CMake 4.2.3, Ninja 1.13, Qt 6.8.2 MSVC 2022 x64, Python 3.10
