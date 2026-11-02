@@ -15,6 +15,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         submodules: recursive
+        fetch-depth: 0
 
     - name: Set up MSVC Developer Command Prompt
       uses: ilammy/msvc-dev-cmd@v1
@@ -66,3 +67,17 @@ jobs:
         $launchSize = (Get-Item $launchPath).Length
         $appSize = (Get-Item $appPath).Length
         Write-Host "[VERIFIED] Found Launch.exe ($launchSize bytes) and WorkbenchApp.exe ($appSize bytes)."
+
+    - name: Package Windows Offline ZIP and Verify
+      shell: pwsh
+      run: |
+        cmd.exe /c scripts\package_msvc.cmd CandidateID
+        if ($LASTEXITCODE -ne 0) {
+          throw "Offline package script or archive verification failed with exit code $LASTEXITCODE"
+        }
+        if (-not (Test-Path "release/CandidateID_Workbench.zip")) {
+          throw "Release ZIP missing after packaging"
+        }
+        if (-not (Test-Path "release/CandidateID_Workbench.sha256")) {
+          throw "Release SHA-256 sidecar missing after packaging"
+        }
