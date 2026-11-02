@@ -26,7 +26,7 @@ graph TD
 
     subgraph Packaging ["4. Compression & Integrity Verification"]
         ZIP["powershell Compress-Archive"] --> REL_ZIP["release/CandidateID_Workbench.zip"]
-        HASH["powershell Get-FileHash SHA256"] --> REL_HASH["release/CandidateID_Workbench.sha256"]
+        HASH["Python hashlib SHA256"] --> REL_HASH["release/CandidateID_Workbench.sha256"]
     end
 
     BIN_DIR --> ZIP
@@ -39,20 +39,20 @@ graph TD
 
 | Item # | Verification Check | Requirement / Rule | Verification Evidence | Status |
 |:---:|:---|:---|:---|:---:|
-| **1** | Clean Release Build | Compiles warning-free with MSVC `/W4 /WX /O2` | `build_msvc.cmd Release` output | **PASS** |
-| **2** | Automated Test Suites | 7 independent CTest executable suites pass | `ctest --test-dir build/Release` (100%) | **PASS** |
+| **1** | Clean Release Build | Builds Release with MSVC `/W4 /O2`; warnings are not treated as errors (`/WX` is not enabled) | `build_msvc.cmd Release` and CI build output; `/WX` is not enabled | **PASS** |
+| **2** | Automated Test Suites | 8 CTest suites pass, including the deliberate negative NaN test | `ctest --test-dir build/Release` (100%) | **PASS** |
 | **3** | Quadratic Thermal FEA | $p = 2.0000$ verified across $N=10, 20, 40, 80$ | `results/thermal/convergence.csv` | **PASS** |
 | **4** | Thermal BC Verification | $T(0)=100^\circ\text{C}, T(1)=20^\circ\text{C}, T(0.42)=188.2^\circ\text{C}$ | `results/thermal/temperature_profiles.csv` | **PASS** |
 | **5** | Backprop Analytical Gradients | $\frac{\partial J}{\partial w}=-1.209464, \frac{\partial J}{\partial c}=-1.537883$ | `results/backprop/gradient_verification.csv` | **PASS** |
 | **6** | Central Finite Differences | Perturbation $\epsilon=10^{-6}$, max error $\le 1.13 \times 10^{-10}$ | `test_backprop.exe` test receipt | **PASS** |
 | **7** | Simultaneous Parameter Update | No intermediate mutation leakage during step 1 update | `test_backprop.exe` assertion pass | **PASS** |
 | **8** | Multicore Numerical Agreement | Max delta serial vs parallel $\le 10^{-8\circ}\text{C}$ across all cases | `results/performance/agreement.csv` | **PASS** |
-| **9** | Extended Workload Scaling | 10,000 cases scaling on Zen 5 ($S_4 = 3.12\times, S_8 = 4.37\times$) | `results/performance/summary_extended.csv` | **PASS** |
+| **9** | Extended Workload Scaling | 10,000 cases scaling on Zen 5 ($S_4 = 3.1042\times, S_8 = 4.3550\times$) | `results/performance/summary_extended.csv` | **PASS** |
 | **10** | Embedded Fault Recovery | Timeout detected & 3-retry auto-recovery executed | `test_embedded_mocks.exe` test receipt | **PASS** |
 | **11** | Simulation Disclosure | All mock adapters declare `isSimulated = true` | `src/core/hardware/*.cpp` | **PASS** |
 | **12** | Standalone Launcher Execution | Out-of-tree double-click spawn without console window | `dist/UnifiedEngineeringWorkbench/Launch.exe` | **PASS** |
 | **13** | Offline Execution | Operates completely disconnected from the Internet | No remote network requests in codebase | **PASS** |
-| **14** | Offline Git Bundle | Full 9+ commit development history bundled in ZIP | `repository_bundle.bundle` verified | **PASS** |
+| **14** | Offline Git Bundle | Offline development history bundled in ZIP | `repository_bundle.bundle` verified | **PASS** |
 | **15** | Archive Checksum | SHA-256 hash calculated and stored in separate file | `release/CandidateID_Workbench.sha256` | **PASS** |
 
 ---
@@ -75,11 +75,11 @@ In compliance with the Zero-Fabrication and Academic Honesty policies, the follo
 - Temperature-dependent nonlinear thermal conductivity $k(T)$ and lateral radiation/convection boundary terms ($h_c (T - T_\infty) + \epsilon \sigma (T^4 - T_\infty^4)$) are omitted in accordance with the 1D linear assignment specification.
 
 ### 3.4 3D Viewport Geometry Rendering Limits
-- The custom `OpenGLViewport` employs CPU-side painter's depth sorting for transparent triangle faces.
-- Recommended mesh complexity is up to ~50,000 triangles (~25 MB ASCII STL) for sustained 60 FPS interaction. For larger industrial meshes (> 1,000,000 facets), GPU hardware depth buffering (Z-buffer) with LOD octrees should be enabled.
+- The custom `OpenGLViewport` class currently derives from `QWidget` and employs CPU-side QPainter projection and depth sorting for rendered triangle faces.
+- The custom QWidget/QPainter 3D renderer has no verified 60 FPS guarantee or validated maximum triangle limit. Evaluate interaction latency with actual meshes before asserting performance. For larger industrial meshes (> 1,000,000 facets), GPU hardware depth buffering (Z-buffer) with LOD octrees should be enabled.
 
 ### 3.5 Multicore CPU Scaling Boundaries
-- On modern high-performance processors (AMD Zen 5), solving 1,000 cases of $N=80$ takes only ~1.85 ms. Operating system timer granularity (~1.0 ms) and thread synchronization overhead bound 4-worker speedup to $\sim 2.19\times$. Sustained scaling requires larger workloads (e.g., 10,000 cases, which achieves $3.12\times$ on 4 threads and $4.37\times$ on 8 threads).
+- The recorded 1,000-case workload ($N=80$) has a median serial runtime of about 1.81 ms and a 4-worker speedup of 2.57×. The 10,000-case measurements give 3.1042× (4 workers) and 4.3550× (8 workers). These observations depend on host load and scheduling; they should not be presented as universal scaling guarantees.
 
 ### 3.6 Handwritten Derivation Appendix
 - The handwritten backpropagation appendix is designated for candidate paper notebook scanning (`docs/appendix/HANDWRITTEN_APPENDIX_SCAN.pdf`). A complete digital handwritten guide is provided in [`docs/appendix/HANDWRITTEN_APPENDIX_GUIDE.md`](appendix/HANDWRITTEN_APPENDIX_GUIDE.md).
@@ -105,5 +105,5 @@ Both binaries were audited using MSVC `dumpbin /dependents` to verify that all n
 ### 4.3 Development-Machine Isolation Test vs. Clean-Machine Limitation
 1. **Development-Machine Isolation**: Execution was verified in an out-of-tree extraction folder (`%TEMP%\CleanWorkbenchTest`) with `PATH` cleared. Binaries resolve Qt and C++ runtime DLLs from their immediate `bin\` folder, and `scripts/audit_deps.cmd` confirms all non-OS dynamic libraries are present in the package.
 2. **Clean-Machine Boundary Disclosed**: Clearing `PATH` on a developer workstation does not isolate the application from `C:\Windows\System32`. While all MSVC VC145 CRT DLLs (`msvcp140*.dll`, `vcruntime140*.dll`, `concrt140.dll`) and Qt libraries are bundled locally to satisfy dynamic loader resolution, true bare-metal verification on a pristine factory-clean Windows machine without developer tools remains an external test (Windows Sandbox is not supported on Windows 11 Home).
-3. Software OpenGL fallback (`opengl32sw.dll`) is bundled to guarantee 3D rendering even on virtualized Windows instances without hardware GPU acceleration.
+3. The current 3D viewer uses QWidget/QPainter software projection and does not require hardware OpenGL rendering. Qt may deploy OpenGL runtime components for other linked Qt modules; this does not establish hardware-accelerated viewport rendering.
 4. Multiple launches execute and exit with zero orphaned background processes or file locks.
