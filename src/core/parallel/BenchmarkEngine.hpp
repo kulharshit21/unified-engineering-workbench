@@ -20,9 +20,9 @@ struct WorkerBenchmarkResult {
 };
 
 struct BenchmarkSuiteResult {
-    std::string cpuModel;
-    int physicalCores{12};
-    int logicalCores{24};
+    std::string cpuModel{"Generic Multicore CPU"};
+    int physicalCores{1};
+    int logicalCores{1};
     int caseCount{500};
     int meshElements{80};
     uint32_t seed{42};
@@ -32,8 +32,11 @@ struct BenchmarkSuiteResult {
 
 class BenchmarkEngine {
 public:
-    // cancelToken: if non-null and set to true, runSuite() stops between
-    // repetitions and returns a partial result with result.cancelled == true.
+    // Detect host CPU brand and topology using native platform APIs
+    static void detectHostCpu(std::string &model, int &physicalCores, int &logicalCores);
+
+    // cancelToken: if non-null and set to true, runSuite() stops cooperatively
+    // and returns a partial result with result.cancelled == true.
     static BenchmarkSuiteResult runSuite(
         int caseCount = 1000,
         int meshElements = 80,

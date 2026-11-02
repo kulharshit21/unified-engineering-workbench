@@ -8,7 +8,7 @@ on:
 
 jobs:
   build-and-test:
-    runs-on: windows-latest
+    runs-on: windows-2022
 
     steps:
     - name: Checkout Source Code
@@ -31,26 +31,38 @@ jobs:
         host: 'windows'
         target: 'desktop'
         arch: 'win64_msvc2022_64'
-        modules: 'qtbase qtsvg'
         cache: true
 
     - name: Configure CMake (Release)
+      shell: pwsh
       run: |
         cmake -B build/Release -G Ninja `
           -DCMAKE_BUILD_TYPE=Release `
-          -DCMAKE_PREFIX_PATH="${{ env.Qt6_DIR }}" `
+          -DCMAKE_PREFIX_PATH="$env:Qt6_DIR" `
           -DCMAKE_CXX_STANDARD=17
 
     - name: Build All Targets (WorkbenchCore, WorkbenchApp, Launch, Tests)
+      shell: pwsh
       run: |
         cmake --build build/Release --config Release
 
     - name: Run Automated CTest Suite
+      shell: pwsh
       run: |
         cd build/Release
         ctest --output-on-failure -C Release
 
-    - name: Verify Launch.exe Executable Presence
+    - name: Verify Built Executables Presence
+      shell: pwsh
       run: |
-        Test-Path "build/Release/bin/Launch.exe"
-        Test-Path "build/Release/bin/WorkbenchApp.exe"
+        $launchPath = "build/Release/bin/Launch.exe"
+        $appPath = "build/Release/bin/WorkbenchApp.exe"
+        if (-not (Test-Path $launchPath)) {
+            throw "CRITICAL FAILURE: Launch.exe missing at $launchPath"
+        }
+        if (-not (Test-Path $appPath)) {
+            throw "CRITICAL FAILURE: WorkbenchApp.exe missing at $appPath"
+        }
+        $launchSize = (Get-Item $launchPath).Length
+        $appSize = (Get-Item $appPath).Length
+        Write-Host "[VERIFIED] Found Launch.exe ($launchSize bytes) and WorkbenchApp.exe ($appSize bytes)."

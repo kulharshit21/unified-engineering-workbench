@@ -17,7 +17,7 @@ if not exist "%BUILDDIR%" (
 )
 
 echo [TEST] Executing CTest suite...
-ctest --test-dir "%BUILDDIR%" --output-on-failure -C %CONFIG% --verbose
+ctest --test-dir "%BUILDDIR%" --output-on-failure -C %CONFIG%
 if errorlevel 1 (
     echo [ERROR] Test run failed.
     exit /b 1

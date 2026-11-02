@@ -24,20 +24,28 @@ CaseResult BatchSolver::solveSingleCase(const ThermalCase &c) {
     return res;
 }
 
-std::vector<CaseResult> BatchSolver::solveSerial(const std::vector<ThermalCase> &cases) {
+std::vector<CaseResult> BatchSolver::solveSerial(
+    const std::vector<ThermalCase> &cases,
+    std::atomic<bool> *cancelToken) {
     std::vector<CaseResult> results(cases.size());
     for (size_t i = 0; i < cases.size(); ++i) {
+        if (cancelToken && cancelToken->load(std::memory_order_relaxed)) {
+            break;
+        }
         results[i] = solveSingleCase(cases[i]);
     }
     return results;
 }
 
-std::vector<CaseResult> BatchSolver::solveParallel(const std::vector<ThermalCase> &cases, size_t numWorkers) {
+std::vector<CaseResult> BatchSolver::solveParallel(
+    const std::vector<ThermalCase> &cases,
+    size_t numWorkers,
+    std::atomic<bool> *cancelToken) {
     if (numWorkers == 0) {
         throw std::invalid_argument("Worker count must be >= 1.");
     }
     if (numWorkers == 1) {
-        return solveSerial(cases);
+        return solveSerial(cases, cancelToken);
     }
 
     std::vector<CaseResult> results(cases.size());
@@ -49,8 +57,11 @@ std::vector<CaseResult> BatchSolver::solveParallel(const std::vector<ThermalCase
 
     for (size_t startIdx = 0; startIdx < totalCases; startIdx += chunkSize) {
         size_t endIdx = std::min(startIdx + chunkSize, totalCases);
-        pool.enqueue([&cases, &results, startIdx, endIdx]() {
+        pool.enqueue([&cases, &results, startIdx, endIdx, cancelToken]() {
             for (size_t i = startIdx; i < endIdx; ++i) {
+                if (cancelToken && cancelToken->load(std::memory_order_relaxed)) {
+                    return; // Stop further processing in this chunk
+                }
                 results[i] = solveSingleCase(cases[i]);
             }
         });

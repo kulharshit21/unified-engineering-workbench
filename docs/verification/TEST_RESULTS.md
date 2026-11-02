@@ -4,9 +4,9 @@
 **Test Harness**: CMake / CTest 4.2.3  
 **Build Configuration**: Release (`/O2 /DNDEBUG`), MSVC 19.51.36248.0, Ninja 1.13  
 **Target Architecture**: Windows 11 x64 (AMD Ryzen AI 9 HX 370, 12 Cores / 24 Threads)  
-**Total Test Suites**: 7  
-**Pass Rate**: **100% (7 Passed, 0 Failed)**  
-**Total Wall-Clock Time**: 7.37 seconds  
+**Total Test Suites**: 8  
+**Pass Rate**: **100% (8 Passed, 0 Failed)**  
+**Total Wall-Clock Time**: 0.63 seconds  
 
 ---
 
@@ -14,13 +14,14 @@
 
 | Test # | Test Name | Executable Binary | Category | Execution Duration | Status | Key Verification Output |
 |:---:|:---|:---|:---:|:---:|:---:|:---|
-| **1** | `test_parallel_batch` | `bin/test_parallel_batch.exe` | Multicore Parallel | 1.40 s | **PASS** | $S_4 = 3.12\times$ (10k cases); Max Delta $= 0.0000 \times 10^{-15\circ}\text{C} \le 10^{-8\circ}\text{C}$ |
-| **2** | `test_backprop` | `bin/test_backprop.exe` | Numerical Neural | 0.89 s | **PASS** | Analytical vs FD gradient error $\le 1.13 \times 10^{-10}$; $x=1.0$ vs $x=0.5$ regression pass |
-| **3** | `test_thermal_fea` | `bin/test_thermal_fea.exe` | Numerical FEA | 0.97 s | **PASS** | Exact quadratic convergence ($p=2.0000$); nodal superconvergence; BC checks |
-| **4** | `test_csv_parser` | `bin/test_csv_parser.exe` | Unit Parsing | 0.96 s | **PASS** | 5-col schema, empty file rejection, NaN/Inf rejection, duplicate ID deduplication |
-| **5** | `test_embedded_mocks` | `bin/test_embedded_mocks.exe` | Embedded HAL | 1.04 s | **PASS** | `isSimulated=true` verified; timeout fault injection & 3-retry auto-recovery verified |
-| **6** | `test_smoke` | `bin/test_smoke.exe` | Smoke Linkage | 1.00 s | **PASS** | Static library linkage, C++17 symbols, core version metadata `v1.0.0-rc1` |
-| **7** | `test_stl_parser` | `bin/test_stl_parser.exe` | Unit Parsing | 1.06 s | **PASS** | Valid ASCII facets, truncated facet rejection, NaN rejection, cross-product normal |
+| **1** | `test_parallel_batch` | `bin/test_parallel_batch.exe` | Multicore Parallel | 0.46 s | **PASS** | Dynamic CPU detection, cooperative cancellation ($< 2.5\text{ ms}$ latency), numerical agreement |
+| **2** | `test_backprop` | `bin/test_backprop.exe` | Numerical Neural | 0.02 s | **PASS** | Analytical vs FD gradient error $\le 1.13 \times 10^{-10}$; $x=1.0$ vs $x=0.5$ regression pass |
+| **3** | `test_thermal_fea` | `bin/test_thermal_fea.exe` | Numerical FEA | 0.02 s | **PASS** | Exact quadratic convergence ($p=2.0000$); nodal superconvergence; BC checks |
+| **4** | `test_csv_parser` | `bin/test_csv_parser.exe` | Unit Parsing | 0.02 s | **PASS** | 5-col schema, empty file rejection, NaN/Inf rejection, duplicate ID deduplication |
+| **5** | `test_embedded_mocks` | `bin/test_embedded_mocks.exe` | Embedded HAL | 0.02 s | **PASS** | `isSimulated=true` verified; timeout fault injection & 3-retry auto-recovery verified |
+| **6** | `test_nan_negative` | `bin/test_nan_negative.exe` | Verification Hardening | 0.02 s | **PASS** | Non-finite (NaN / Inf) rejection in Release mode; verified via CTest `WILL_FAIL TRUE` |
+| **7** | `test_smoke` | `bin/test_smoke.exe` | Smoke Linkage | 0.02 s | **PASS** | Static library linkage, C++17 symbols, core version metadata `v1.0.0-rc1` |
+| **8** | `test_stl_parser` | `bin/test_stl_parser.exe` | Unit Parsing | 0.02 s | **PASS** | Valid ASCII facets, truncated facet rejection, NaN rejection, cross-product normal |
 
 ---
 

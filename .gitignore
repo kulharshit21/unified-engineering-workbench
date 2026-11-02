@@ -57,3 +57,6 @@ Desktop.ini
 # Exceptions: keep pre-packaged releases or scripts if explicitly tracked in release/
 !packaging/Launch.exe
 !packaging/scripts/
+
+test_artifacts/
+

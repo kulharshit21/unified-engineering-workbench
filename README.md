@@ -2,16 +2,16 @@
 
 [![Platform: Windows 11 x64](https://img.shields.io/badge/Platform-Windows%2011%20x64-0078D4.svg?logo=windows)](https://microsoft.com/windows)
 [![C++17 Standard](https://img.shields.io/badge/Language-C%2B%2B17%20(MSVC%2019.51)-00599C.svg?logo=c%2B%2B)](https://isocpp.org)
-[![Qt 6.8.2 MSVC](https://img.shields.io/badge/GUI-Qt%206.8.2%20Widgets%20%2F%20OpenGL-41CD52.svg?logo=qt)](https://qt.io)
+[![Qt 6.8.2 MSVC](https://img.shields.io/badge/GUI-Qt%206.8.2%20Widgets-41CD52.svg?logo=qt)](https://qt.io)
 [![Build System](https://img.shields.io/badge/Build-CMake%204.2%20%7C%20Ninja%201.13-064F8C.svg?logo=cmake)](https://cmake.org)
-[![Automated Tests](https://img.shields.io/badge/CTest-7%2F7%20Suites%20Passed%20(100%25)-brightgreen.svg)]()
+[![Automated Tests](https://img.shields.io/badge/CTest-8%2F8%20Suites%20Passed%20(100%25)-brightgreen.svg)]()
 [![Zero Fabrication](https://img.shields.io/badge/Integrity-Zero%20Fabrication%20Verified-success.svg)]()
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 > **R&D Internship 2026–2027 Common Assignment Submission**  
 > **Candidate**: Harshit Kulkarni (`kulharshit21`)  
 > **Repository**: Private GitHub (`https://github.com/kulharshit21/unified-engineering-workbench`)  
-> **Standalone Package**: `CandidateID_Workbench.zip` (SHA256 Verified, One-Click Offline Launch)
+> **Standalone Package**: Distributed as verified archive `CandidateID_Workbench.zip` (SHA-256 verified, standalone one-click offline launch), packaged via `scripts\package_msvc.cmd CandidateID`.
 
 ---
 
@@ -29,23 +29,29 @@
 
 The deliverable distribution requires **no terminal, no PowerShell, no administrative rights, no package installation, no Python runtime, and no Internet connection**:
 
-1. Extract [`release/CandidateID_Workbench.zip`](release/CandidateID_Workbench.zip) to any folder on Windows 11 x64.
-2. Double-click [`Launch.exe`](dist/UnifiedEngineeringWorkbench/Launch.exe).
-3. The Unified Engineering Workbench opens immediately in native 60 FPS desktop presentation mode.
+1. Locate the standalone submission archive `CandidateID_Workbench.zip` (distributed alongside this submission or packaged from source via `scripts\package_msvc.cmd CandidateID`).
+2. Extract `CandidateID_Workbench.zip` to any folder on Windows 11 x64.
+3. Double-click `Launch.exe` in the root of the extracted directory.
+4. The Unified Engineering Workbench opens immediately with responsive interactive controls.
 
 ```
 CandidateID_Workbench/
-├── Launch.exe                    <-- Win32 Subsystem GUI Launcher (Zero console popups)
+├── Launch.exe                    <-- Win32 Subsystem GUI Launcher (Zero console popups, source in packaging/Launch.cpp)
 ├── bin/
 │   ├── WorkbenchApp.exe          <-- Main Qt 6 desktop application
-│   ├── Qt6Core.dll, Qt6Gui.dll, Qt6Widgets.dll, Qt6OpenGL.dll, ... (Bundled Qt 6 runtimes)
+│   ├── Qt6Core.dll, Qt6Gui.dll, Qt6Widgets.dll, ... (Bundled Qt 6 runtimes)
 │   ├── platforms/qwindows.dll    <-- Windows QPA display platform plugin
 │   └── msvcp140.dll, vcruntime140.dll (Bundled MSVC C++ runtimes)
 ├── data/                         <-- Synthetic ASCII STL & ANSYS CSV benchmark datasets
 ├── docs/                         <-- Architecture specs, derivations, defect ledgers, 5-page PDF report
 ├── results/                      <-- Raw verified numerical CSV data and high-res PNG charts
-└── repository_bundle.bundle      <-- Offline Git repository history bundle (9+ verified commits)
+└── repository_bundle.bundle      <-- Offline Git repository history bundle
 ```
+
+Alternatively, to compile and run from source in VS Code / Antigravity:
+1. Open the repository root in VS Code on Windows 11.
+2. Run the Task `CMake: Build Release` (or execute `scripts\build_msvc.cmd Release`).
+3. Press `F5` or execute the launch configuration `Launch Workbench (Release)` defined in [`.vscode/launch.json`](.vscode/launch.json).
 
 ---
 
@@ -55,8 +61,8 @@ CandidateID_Workbench/
 graph TD
     subgraph UI ["Desktop Presentation Layer: WorkbenchApp (Qt 6.8.2)"]
         TAB["Interactive Workspace (5 Dedicated Views)"]
-        OGL["OpenGLViewport (3D CAD & ANSYS Point Cloud)"]
-        PLOT["PlotWidget (Custom Hardware-Accelerated 2D Plots)"]
+        OGL["OpenGLViewport (3D CAD & ANSYS Point Cloud Software Render)"]
+        PLOT["PlotWidget (Custom Antialiased 2D Curve Plots)"]
     end
 
     subgraph Core ["High-Performance Computational Core: WorkbenchCore (Pure C++17)"]
@@ -78,9 +84,9 @@ graph TD
 ```
 
 ### Module Breakdown
-- **Geometry & 3D Visualization (Task B)**: Imports ASCII STL surface meshes and ANSYS 5-column nodal temperature datasets (`node_id,x_m,y_m,z_m,temperature_C`). Features 3D camera orbit/pan/zoom, directional lighting, surface normal cross-product recalculation, 4-stop Turbo/Jet scalar colormapping, coordinate tripod, and screen-space nearest-node click inspection.
+- **Geometry & 3D Visualization (Task B)**: Imports ASCII STL surface meshes and ANSYS 5-column nodal temperature datasets (`node_id,x_m,y_m,z_m,temperature_C`). Features a robust software 3D viewport (derived from `QWidget` using `QPainter` with 3D projection, depth sorting, and directional Lambertian surface shading) with interactive camera orbit, pan, zoom, surface normal cross-product recalculation, 4-stop Turbo/Jet scalar colormapping, coordinate tripod, and screen-space nearest-node click inspection.
 - **1D Steady-State Thermal FEA (Task C)**: Discretizes the 1D conducting rod with volumetric heat generation using 2-node linear elements. Solves the assembled tridiagonal system in $O(N)$ operations via the direct Thomas algorithm (TDMA). Mathematically proves nodal superconvergence and confirms exact quadratic midpoint truncation convergence ($p = 2.0000$, $e = \frac{qh^2}{8k} = 125h^2$).
-- **Multicore CPU Scaling (Task D)**: Features a bounded worker thread pool (`ThreadPool.hpp`) with mutex/condition variable synchronization. Benchmarks 1,000 cases (standard workload) and 10,000 cases (extended workload) on an AMD Ryzen AI 9 HX 370, achieving $2.57\times$ speedup on 4 threads for 1,000 cases, and $3.10\times$ on 4 threads ($4.36\times$ on 8 threads) for 10,000 cases with exact binary numerical determinism ($\Delta \le 10^{-15\circ}\text{C}$).
+- **Multicore CPU Scaling (Task D)**: Features a bounded worker thread pool (`ThreadPool.hpp`) with mutex/condition variable synchronization. Benchmarks 1,000 cases (standard workload) and 10,000 cases (extended workload) on an AMD Ryzen AI 9 HX 370, achieving $2.57\times$ speedup on 4 threads for 1,000 cases, and $3.10\times$ on 4 threads ($4.36\times$ on 8 threads) for 10,000 cases with exact binary numerical determinism ($\Delta \le 10^{-15\circ}\text{C}$). Features cooperative cancellation checked across worker configs, repetitions, and task chunks.
 - **Embedded Coprocessor HAL (Task E)**: Models a multi-coprocessor testbench for Raspberry Pi Pico (RP2040 MCU), Digilent Arty A7-35T (Artix-7 FPGA), and Digilent JTAG-HS2 (auto-sensing VREF from 1.8V to 5.0V). Features live telemetry streaming, simulated 500 ms packet timeout fault injection, and automated 3-retry self-healing recovery. Conspicuously labeled `isSimulated = true`.
 - **Neural Backpropagation Engine (Task F)**: Pure C++17 implementation of a single-hidden-layer tanh regressor. Derives analytical gradients via the multivariate chain rule, verifies all 4 parameters against central finite differences ($\epsilon = 10^{-6}$) within $1.13 \times 10^{-10}$, executes simultaneous gradient descent updates, and converges monotonically over 100 steps from $J = 1.1825 \to 1.7026 \times 10^{-20}$.
 
@@ -143,7 +149,7 @@ All architectural specifications, mathematical derivations, defect logs, and aud
 | **Performance** | [`docs/performance/BENCHMARK_METHODOLOGY.md`](docs/performance/BENCHMARK_METHODOLOGY.md) | Thread pool design, Amdahl's Law, timer quantization mitigation |
 | **Bench Results** | [`docs/performance/BENCHMARK_RESULTS.md`](docs/performance/BENCHMARK_RESULTS.md) | 1k vs 10k batch scaling, empirical tables, speedup and efficiency curves |
 | **Test Strategy** | [`docs/verification/TEST_STRATEGY.md`](docs/verification/TEST_STRATEGY.md) | Multi-tier test philosophy, unit tests, negative edge cases, CI workflow |
-| **Test Receipts** | [`docs/verification/TEST_RESULTS.md`](docs/verification/TEST_RESULTS.md) | Real execution receipts across all 7 CTest suites (100% pass rate) |
+| **Test Receipts** | [`docs/verification/TEST_RESULTS.md`](docs/verification/TEST_RESULTS.md) | Real execution receipts across all 8 CTest suites (100% pass rate) |
 | **Traceability** | [`docs/verification/REQUIREMENTS_TRACEABILITY.md`](docs/verification/REQUIREMENTS_TRACEABILITY.md) | Bidirectional mapping from internship brief to verified C++ code |
 | **Decisions** | [`docs/development/DECISION_LOG.md`](docs/development/DECISION_LOG.md) | Architecture Decision Records (ADRs 001–006) |
 | **Defect Ledger** | [`docs/development/FAILURES_AND_FIXES.md`](docs/development/FAILURES_AND_FIXES.md) | 11 authentic defect analyses (DEF-001 to DEF-011) with root-cause fixes |

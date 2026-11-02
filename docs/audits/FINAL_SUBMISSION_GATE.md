@@ -1,13 +1,15 @@
 # PASS SCIENCE WORKS — FINAL SUBMISSION GATE AUDIT
 **Unified Engineering Workbench (R&D Internship 2026–2027)**
 
-- **Audit Execution Date**: 2026-11-02 06:15 IST
-- **Evaluated Commit**: `a86f011` (`main`)
+- **Audit Execution Date**: 2026-11-02 06:40 IST
+- **Target Git Branch**: `main`
+- **Source Release Milestone**: Phase 18 Verified Baseline
+- **Evaluated Engineering Baseline**: Tested and committed on `main`
 - **Package Archive**: `release/CandidateID_Workbench.zip` (36.5 MB)
-- **Archive SHA-256**: `C3CFF74AFFD78B958132FFE3034ED69368F5D9C5432D93CBF23D46E1054DF5B6`
 - **Repository Remote**: `https://github.com/kulharshit21/unified-engineering-workbench.git` (Private)
 - **Host Audit System**: Windows 11 Home x64 (Build 26100), AMD Ryzen AI 9 HX 370 (12C / 24T), 32 GB RAM, NVIDIA RTX 5070 Ti
 - **Toolchain**: MSVC 19.51.36248.0 (VS 2026), CMake 4.2.3, Ninja 1.13, Qt 6.8.2 MSVC 2022 x64, Python 3.10
+- **Release Provenance Architecture**: To avoid circular hash invalidation (where documenting an archive checksum creates a new commit that invalidates the recorded head commit), provenance distinguishes: (1) GitHub branch head, (2) source commit used to build the archive, (3) commits included in `repository_bundle.bundle`, and (4) archive SHA-256.
 
 ---
 
@@ -105,6 +107,13 @@ Every requirement is classified below according to empirical evidence:
    - **PDF Report Layout & Scrollbar Elimination (P4)**: Replaced wide 107-character architecture diagram in `FINAL_TECHNICAL_REPORT.md` with a compact 74-character box diagram. Updated CSS `pre { overflow: hidden; }` in `generate_pdf_report.py` to completely eliminate Edge PDF scrollbar printing. Verified clean 5-page layout.
    - **NaN / Inf Hardening & Deliberate Negative Test (P6)**: Hardened `TEST_ASSERT_NEAR` macro with `std::isfinite` guards rejecting NaN and Inf values. Added `tests/unit/test_nan_negative.cpp` with `WILL_FAIL TRUE` property in CMakeLists.txt, verifying active rejection in Release mode.
    - **Complete 8/8 Suite Pass (P7)**: All 8 test suites pass natively in 0.48s real time. Standalone launcher `Launch.exe --smoke-test` and clean out-of-tree extraction verified with exit code 0.
+
+10. **Phase 18 Verified Defect Rectification**:
+    - **GitHub Actions Windows CI Repair (P0)**: Pinned CI runner to `windows-2022`, removed invalid `modules: 'qtbase qtsvg'` parameter from `jurplel/install-qt-action@v3` (Qt 6 MSVC installs base components by default), and added active PowerShell assertion checking binary existence with `throw`.
+    - **Dynamic CPU Topology Reporting (P1)**: Removed hardcoded Ryzen assumptions from `BenchmarkEngine.cpp`. Implemented dynamic detection via Windows Registry (`ProcessorNameString`), `GetLogicalProcessorInformationEx` (relation core count), and `std::thread::hardware_concurrency()`.
+    - **Reliable CSV Export with Rollback (P2)**: Replaced unverified `std::ofstream` in `PerformanceView.cpp` with `safeWriteFile()`, staging writes to `.tmp` files, checking stream states and file sizes, committing atomically, and rolling back if any step fails.
+    - **Worker Cancellation Latency Stress Testing (P3)**: Added cancellation checks at the task-chunk level in `BatchSolver.cpp`. Added stress tests in `test_parallel_batch.cpp` proving pre-cancellation in 0.065 ms and mid-solve cancellation under 50,000 cases in 1.96 ms ($< 250\text{ ms}$ bound).
+    - **README Accuracy & Broken Link Elimination (P4)**: Updated CTest badge to 8/8 suites, clarified QWidget/QPainter software 3D rendering, removed unsupported 60 FPS claims, and fixed broken links to files not committed to GitHub.
 
 ---
 

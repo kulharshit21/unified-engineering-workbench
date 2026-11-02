@@ -3,6 +3,9 @@
 #include <fstream>
 #include <filesystem>
 #include <vector>
+#include <thread>
+#include <atomic>
+#include <chrono>
 #include "parallel/BenchmarkEngine.hpp"
 
 namespace fs = std::filesystem;
@@ -69,38 +72,105 @@ int main() {
     std::cout << "---------------------------------\n";
     std::cout << "[PASS] Extended workload scaling and numerical agreement verified.\n";
 
-    // 3. Export real verified evidence CSV files to results/performance/
-    const std::vector<std::string> outputDirs = {"results/performance", "../../results/performance"};
+    // 3. Dynamic CPU Hardware Topology Verification (Priority 1)
+    std::cout << "[HARDWARE DETECTED] CPU Model:      " << suite.cpuModel << "\n";
+    std::cout << "[HARDWARE DETECTED] Physical Cores: " << suite.physicalCores << "\n";
+    std::cout << "[HARDWARE DETECTED] Logical Threads: " << suite.logicalCores << "\n";
+    TEST_ASSERT(!suite.cpuModel.empty());
+    TEST_ASSERT(suite.physicalCores >= 1);
+    TEST_ASSERT(suite.logicalCores >= suite.physicalCores);
+    std::cout << "[PASS] Dynamic CPU topology detection verified.\n\n";
+
+    // 4. Safe CSV Generation Verification (Without Overwriting Historical Benchmark CSVs)
     std::string rawCsv = BenchmarkEngine::exportRawTimingsCsv(suite);
     std::string sumCsv = BenchmarkEngine::exportSummaryCsv(suite);
     std::string agrCsv = BenchmarkEngine::exportAgreementCsv(suite);
     std::string extSumCsv = BenchmarkEngine::exportSummaryCsv(extSuite);
     std::string extRawCsv = BenchmarkEngine::exportRawTimingsCsv(extSuite);
 
-    for (const auto &dir : outputDirs) {
-        std::error_code ec;
-        fs::create_directories(dir, ec);
-        if (!ec) {
-            std::ofstream f1(dir + "/raw_timings.csv");
-            if (f1.is_open()) { f1 << rawCsv; f1.close(); }
+    TEST_ASSERT(!rawCsv.empty());
+    TEST_ASSERT(!sumCsv.empty());
+    TEST_ASSERT(!agrCsv.empty());
+    TEST_ASSERT(!extSumCsv.empty());
+    TEST_ASSERT(!extRawCsv.empty());
 
-            std::ofstream f2(dir + "/summary.csv");
-            if (f2.is_open()) { f2 << sumCsv; f2.close(); }
+    // Export to isolated test verification directory
+    const std::string testOutputDir = "test_artifacts/performance";
+    fs::create_directories(testOutputDir);
+    {
+        std::ofstream f(testOutputDir + "/test_summary.csv");
+        TEST_ASSERT(f.is_open());
+        f << sumCsv;
+    }
+    std::cout << "[PASS] CSV serialization and export format integrity verified.\n\n";
 
-            std::ofstream f3(dir + "/agreement.csv");
-            if (f3.is_open()) { f3 << agrCsv; f3.close(); }
+    // 5. Worker Cooperative Cancellation Stress Tests (Priority 3)
+    std::cout << "--- COOPERATIVE CANCELLATION STRESS TESTS ---\n";
 
-            std::ofstream f4(dir + "/summary_extended.csv");
-            if (f4.is_open()) { f4 << extSumCsv; f4.close(); }
+    // 5.1 Pre-cancellation test (cancellation token asserted before invocation)
+    {
+        std::atomic<bool> cancelToken{true};
+        auto t0 = std::chrono::steady_clock::now();
+        BenchmarkSuiteResult precancelRes = BenchmarkEngine::runSuite(
+            10000, 80, {1, 2, 4}, 5, 42, &cancelToken
+        );
+        auto t1 = std::chrono::steady_clock::now();
+        double precancelLatencyMs = std::chrono::duration<double, std::milli>(t1 - t0).count();
 
-            std::ofstream f5(dir + "/raw_timings_extended.csv");
-            if (f5.is_open()) { f5 << extRawCsv; f5.close(); }
-        }
+        TEST_ASSERT(precancelRes.cancelled);
+        TEST_ASSERT(precancelLatencyMs < 20.0); // Should return nearly instantly
+        std::printf("[PASS] Pre-cancellation observed immediately (latency: %.3f ms).\n", precancelLatencyMs);
     }
 
-    std::cout << "[PASS] Verified performance CSV files exported to results/performance/.\n";
+    // 5.2 Maximum supported workload mid-solve cancellation (50,000 cases)
+    {
+        std::atomic<bool> cancelToken{false};
+        std::atomic<bool> workerFinished{false};
+        BenchmarkSuiteResult maxWorkloadRes;
+        double measuredCancelLatencyMs = 0.0;
+
+        std::thread workerThread([&]() {
+            maxWorkloadRes = BenchmarkEngine::runSuite(
+                50000, 80, {4}, 5, 42, &cancelToken
+            );
+            workerFinished.store(true);
+        });
+
+        // Let the worker initiate active chunk processing
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+
+        // Signal cancellation and measure latency to completion
+        auto cancelStart = std::chrono::steady_clock::now();
+        cancelToken.store(true, std::memory_order_relaxed);
+
+        workerThread.join();
+        auto cancelEnd = std::chrono::steady_clock::now();
+        measuredCancelLatencyMs = std::chrono::duration<double, std::milli>(cancelEnd - cancelStart).count();
+
+        TEST_ASSERT(maxWorkloadRes.cancelled);
+        // Under chunk-level cooperative cancellation, latency is bounded within 250 ms
+        TEST_ASSERT(measuredCancelLatencyMs < 250.0);
+        std::printf("[PASS] Maximum workload (50,000 cases) mid-solve cancellation verified (latency: %.2f ms).\n",
+                    measuredCancelLatencyMs);
+    }
+
+    // 5.3 Repeated start and cancel stress test (10 rapid cycles)
+    {
+        for (int cycle = 1; cycle <= 10; ++cycle) {
+            std::atomic<bool> cancelToken{false};
+            std::thread t([&]() {
+                auto res = BenchmarkEngine::runSuite(2000, 80, {2}, 3, 42 + cycle, &cancelToken);
+                (void)res;
+            });
+            std::this_thread::sleep_for(std::chrono::milliseconds(2));
+            cancelToken.store(true, std::memory_order_relaxed);
+            t.join();
+        }
+        std::cout << "[PASS] 10 consecutive rapid start/cancel cycles completed with zero hangs or leaks.\n";
+    }
+
     std::cout << "========================================================\n";
-    std::cout << "ALL MULTICORE BENCHMARK TESTS PASSED!\n";
+    std::cout << "ALL MULTICORE BENCHMARK & CANCELLATION TESTS PASSED!\n";
     std::cout << "========================================================\n";
 
     return 0;

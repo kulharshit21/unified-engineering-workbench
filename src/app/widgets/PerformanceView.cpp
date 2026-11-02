@@ -7,12 +7,81 @@
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QApplication>
+#include <QDir>
 #include <thread>
 #include <fstream>
+#include <filesystem>
+#include <chrono>
 
 Q_DECLARE_METATYPE(Workbench::Core::Parallel::BenchmarkSuiteResult)
 
 namespace Workbench::App {
+
+namespace {
+
+struct SafeWriteResult {
+    bool ok{false};
+    std::string error;
+};
+
+SafeWriteResult safeWriteFile(const std::string &destPath, const std::string &content) {
+    try {
+        std::filesystem::path p(destPath);
+        std::filesystem::path parentDir = p.parent_path();
+        if (!parentDir.empty() && !std::filesystem::exists(parentDir)) {
+            std::error_code ec;
+            std::filesystem::create_directories(parentDir, ec);
+            if (ec) {
+                return {false, "Cannot create output directory: " + parentDir.string() + " (" + ec.message() + ")"};
+            }
+        }
+
+        auto epochTime = std::chrono::high_resolution_clock::now().time_since_epoch().count();
+        std::string tmpPath = destPath + ".tmp." + std::to_string(epochTime);
+
+        {
+            std::ofstream out(tmpPath, std::ios::out | std::ios::binary | std::ios::trunc);
+            if (!out.is_open()) {
+                return {false, "Permission denied or invalid path: unable to open " + destPath};
+            }
+            out.write(content.data(), static_cast<std::streamsize>(content.size()));
+            out.flush();
+            if (out.fail() || out.bad()) {
+                out.close();
+                std::error_code ec;
+                std::filesystem::remove(tmpPath, ec);
+                return {false, "I/O write failure occurred while writing data to " + destPath};
+            }
+            out.close();
+        }
+
+        std::error_code ec;
+        auto writtenSize = std::filesystem::file_size(tmpPath, ec);
+        if (ec || writtenSize != content.size()) {
+            std::filesystem::remove(tmpPath, ec);
+            return {false, "Integrity check failed: written file size mismatch for " + destPath};
+        }
+
+        // Finalize: atomic rename with copy fallback
+        std::filesystem::rename(tmpPath, destPath, ec);
+        if (ec) {
+            std::filesystem::copy_file(tmpPath, destPath, std::filesystem::copy_options::overwrite_existing, ec);
+            std::error_code ecRm;
+            std::filesystem::remove(tmpPath, ecRm);
+            if (ec) {
+                return {false, "Failed to commit destination file: " + destPath + " (" + ec.message() + ")"};
+            }
+        }
+
+        return {true, ""};
+    } catch (const std::exception &ex) {
+        return {false, std::string("Filesystem exception: ") + ex.what()};
+    } catch (...) {
+        return {false, "Unknown critical error occurred during file export."};
+    }
+}
+
+} // anonymous namespace
 
 PerformanceView::PerformanceView(QWidget *parent)
     : QWidget(parent) {
@@ -75,11 +144,17 @@ void PerformanceView::setupUi() {
 
     leftLayout->addWidget(configBox);
 
-    // 2. Hardware System Info Label
-    unsigned int hwThreads = std::thread::hardware_concurrency();
-    m_sysInfoLabel = new QLabel(QString("Hardware: Host CPU detected with %1 logical execution threads.")
-                                    .arg(hwThreads), leftPanel);
+    // 2. Hardware System Info Label (Dynamic CPU Detection)
+    std::string cpuModel;
+    int physCores = 1;
+    int logCores = 1;
+    Core::Parallel::BenchmarkEngine::detectHostCpu(cpuModel, physCores, logCores);
+    m_sysInfoLabel = new QLabel(QString("Hardware: %1 (%2 physical cores, %3 logical threads).")
+                                    .arg(QString::fromStdString(cpuModel))
+                                    .arg(physCores)
+                                    .arg(logCores), leftPanel);
     m_sysInfoLabel->setStyleSheet("color: #a0a5b8; font-size: 11px;");
+    m_sysInfoLabel->setWordWrap(true);
     leftLayout->addWidget(m_sysInfoLabel);
 
     // 3. Execution Buttons & Progress Bar
@@ -247,25 +322,47 @@ void PerformanceView::onExportCsvClicked() {
     QString dir = QFileDialog::getExistingDirectory(this, "Select Directory to Export Benchmark CSVs", "results/performance");
     if (dir.isEmpty()) return;
 
+    QDir qdir(dir);
+    if (!qdir.exists()) {
+        QMessageBox::critical(this, "Export Error", 
+            QString("The destination directory does not exist or is inaccessible:\n%1").arg(dir));
+        return;
+    }
+
     std::string sumPath = dir.toStdString() + "/summary.csv";
     std::string rawPath = dir.toStdString() + "/raw_timings.csv";
 
     std::string sumCsv = Core::Parallel::BenchmarkEngine::exportSummaryCsv(m_lastResult);
     std::string rawCsv = Core::Parallel::BenchmarkEngine::exportRawTimingsCsv(m_lastResult);
 
-    {
-        std::ofstream out(sumPath);
-        if (out.is_open()) out << sumCsv;
+    auto resSum = safeWriteFile(sumPath, sumCsv);
+    if (!resSum.ok) {
+        QMessageBox::critical(this, "Export Failed",
+            QString("Failed to write summary CSV file:\n%1\n\nReason: %2\n\nNo partial files were left.")
+                .arg(QString::fromStdString(sumPath))
+                .arg(QString::fromStdString(resSum.error)));
+        return;
     }
-    {
-        std::ofstream out(rawPath);
-        if (out.is_open()) out << rawCsv;
+
+    auto resRaw = safeWriteFile(rawPath, rawCsv);
+    if (!resRaw.ok) {
+        // Rollback first file to prevent inconsistent partial state
+        std::error_code ec;
+        std::filesystem::remove(sumPath, ec);
+
+        QMessageBox::critical(this, "Export Failed",
+            QString("Failed to write raw timings CSV file:\n%1\n\nReason: %2\n\nRolled back summary file to ensure consistency.")
+                .arg(QString::fromStdString(rawPath))
+                .arg(QString::fromStdString(resRaw.error)));
+        return;
     }
 
     QMessageBox::information(this, "Export Succeeded", 
-        QString("Exported benchmark CSVs successfully:\n%1\n%2")
+        QString("Exported benchmark CSVs successfully:\n- %1 (%2 bytes)\n- %3 (%4 bytes)")
             .arg(QString::fromStdString(sumPath))
-            .arg(QString::fromStdString(rawPath)));
+            .arg(sumCsv.size())
+            .arg(QString::fromStdString(rawPath))
+            .arg(rawCsv.size()));
 }
 
 } // namespace Workbench::App
