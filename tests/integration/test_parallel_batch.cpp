@@ -6,6 +6,8 @@
 #include <thread>
 #include <atomic>
 #include <chrono>
+#include <stdexcept>
+#include <cmath>
 #include "parallel/BenchmarkEngine.hpp"
 
 namespace fs = std::filesystem;
@@ -168,6 +170,26 @@ int main() {
         }
         std::cout << "[PASS] 10 consecutive rapid start/cancel cycles completed with zero hangs or leaks.\n";
     }
+
+    // Invalid-parameter regression: prevent undefined behavior from zero repetitions.
+    auto rejects = [](int cases, int elements, std::vector<size_t> counts, int reps) {
+        try {
+            (void)BenchmarkEngine::runSuite(cases, elements, counts, reps, 42);
+        } catch (const std::invalid_argument &) {
+            return true;
+        }
+        return false;
+    };
+    TEST_ASSERT(rejects(10, 10, {1, 2}, 0));
+    TEST_ASSERT(rejects(0, 10, {1}, 1));
+    TEST_ASSERT(rejects(10, 0, {1}, 1));
+    TEST_ASSERT(rejects(10, 10, {}, 1));
+    TEST_ASSERT(rejects(10, 10, {0, 1}, 1));
+    // A parallel-only benchmark must still have a real serial timing baseline.
+    auto parallelOnly = BenchmarkEngine::runSuite(100, 10, {2}, 1, 42);
+    TEST_ASSERT(parallelOnly.workerResults.size() == 1);
+    TEST_ASSERT(std::isfinite(parallelOnly.workerResults[0].speedup));
+    TEST_ASSERT(parallelOnly.workerResults[0].speedup > 0.0);
 
     std::cout << "========================================================\n";
     std::cout << "ALL MULTICORE BENCHMARK & CANCELLATION TESTS PASSED!\n";
