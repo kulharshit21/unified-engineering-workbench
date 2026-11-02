@@ -1,24 +1,43 @@
 import zipfile
 import os
 import shutil
+import tempfile
 import subprocess
 import time
 import sys
 
 def verify_extraction():
     candidate_id = sys.argv[1] if len(sys.argv) > 1 else 'CandidateID'
-    tmp_dir = os.path.join(os.environ['TEMP'], 'CleanWorkbenchTest')
-    if os.path.exists(tmp_dir):
-        shutil.rmtree(tmp_dir, ignore_errors=True)
-    os.makedirs(tmp_dir, exist_ok=True)
+    # Use a unique scratch directory; never remove a fixed user-visible
+    # %TEMP% path that may contain unrelated files.
+    tmp_dir = tempfile.mkdtemp(prefix='CleanWorkbenchTest_')
 
     zip_path = os.path.abspath(f'release/{candidate_id}_Workbench.zip')
     print(f"Testing extraction from: {zip_path}")
     print(f"Target scratch directory: {tmp_dir}")
 
     t0 = time.perf_counter()
-    with zipfile.ZipFile(zip_path, 'r') as z:
-        z.extractall(tmp_dir)
+    try:
+        with zipfile.ZipFile(zip_path, 'r') as z:
+            if z.testzip() is not None:
+                print("[FAIL] ZIP integrity check failed.")
+                return False
+            for entry in z.infolist():
+                # PowerShell ZIPs use Windows separators, even on other hosts.
+                relative = entry.filename.replace('\\', '/')
+                target = os.path.realpath(os.path.join(tmp_dir, relative))
+                if os.path.commonpath([os.path.realpath(tmp_dir), target]) != os.path.realpath(tmp_dir):
+                    print("[FAIL] Unsafe ZIP entry path: " + entry.filename)
+                    return False
+                if entry.is_dir() or relative.endswith('/'):
+                    os.makedirs(target, exist_ok=True)
+                else:
+                    os.makedirs(os.path.dirname(target), exist_ok=True)
+                    with z.open(entry) as src, open(target, 'wb') as dst:
+                        shutil.copyfileobj(src, dst)
+    except (OSError, zipfile.BadZipFile, ValueError) as exc:
+        print("[FAIL] ZIP extraction error: " + str(exc))
+        return False
     t1 = time.perf_counter()
     print(f"[PASS] Successfully extracted {len(os.listdir(tmp_dir))} top-level entries in {t1 - t0:.2f} s")
 
@@ -38,7 +57,7 @@ def verify_extraction():
 
     # Run WorkbenchApp.exe --smoke-test
     print("Executing out-of-tree: bin/WorkbenchApp.exe --smoke-test")
-    p = subprocess.run([app_exe, '--smoke-test'], cwd=os.path.join(tmp_dir, 'bin'), capture_output=True, text=True)
+    p = subprocess.run([app_exe, '--smoke-test'], cwd=os.path.join(tmp_dir, 'bin'), capture_output=True, text=True, timeout=60)
     print(f"WorkbenchApp returncode: {p.returncode}")
     print(f"WorkbenchApp stdout: {p.stdout.strip()}")
     if p.returncode != 0:
@@ -85,7 +104,7 @@ def verify_extraction():
         print(f"[FAIL] Git bundle invalid: {res.stderr}")
         return False
 
-    # Cleanup scratch
+    # Cleanup only our uniquely-created scratch directory.
     shutil.rmtree(tmp_dir, ignore_errors=True)
     print("[PASS] Cleaned up temporary test directory.")
     print("ALL CLEAN ARCHIVE VERIFICATION CHECKS PASSED.")
