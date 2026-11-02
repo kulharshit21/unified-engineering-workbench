@@ -26,7 +26,7 @@ graph TD
 
     subgraph Packaging ["4. Compression & Integrity Verification"]
         ZIP["powershell Compress-Archive"] --> REL_ZIP["release/CandidateID_Workbench.zip"]
-        HASH["powershell Get-FileHash SHA256"] --> REL_HASH["release/CandidateID_Workbench.sha256"]
+        HASH["Python hashlib SHA256"] --> REL_HASH["release/CandidateID_Workbench.sha256"]
     end
 
     BIN_DIR --> ZIP
