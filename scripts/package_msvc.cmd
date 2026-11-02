@@ -1,83 +1,121 @@
 @echo off
-setlocal
-set CANDIDATE_ID=%1
-if "%CANDIDATE_ID%"=="" set CANDIDATE_ID=CandidateID
-set ROOTDIR=%~dp0..
-set BUILDDIR=%ROOTDIR%\build\Release
-set DISTDIR=%ROOTDIR%\dist\UnifiedEngineeringWorkbench
-set RELEASEDIR=%ROOTDIR%\release
-set QTBIN=C:\Qt\6.8.2\msvc2022_64\bin
-set WINDEPLOYQT=%QTBIN%\windeployqt.exe
-set VSVARS=C:\Program Files\Microsoft Visual Studio\18\Community\VC\Auxiliary\Build\vcvars64.bat
-
+setlocal EnableExtensions DisableDelayedExpansion
+set "CANDIDATE_ID=%~1"
+if not defined CANDIDATE_ID set "CANDIDATE_ID=CandidateID"
+set "ROOTDIR=%~dp0.."
+set "BUILDDIR=%ROOTDIR%\build\Release"
+set "DISTDIR=%ROOTDIR%\dist\UnifiedEngineeringWorkbench"
+set "RELEASEDIR=%ROOTDIR%\release"
+rem Use the Qt installation injected by GitHub Actions when available.
+if not defined QTBIN if defined Qt6_DIR for %%I in ("%Qt6_DIR%\..\..\..\bin") do set "QTBIN=%%~fI"
+if not defined QTBIN set "QTBIN=C:\Qt\6.8.2\msvc2022_64\bin"
+if not defined WINDEPLOYQT set "WINDEPLOYQT=%QTBIN%\windeployqt.exe"
+if not defined VSVARS set "VSVARS=C:\Program Files\Microsoft Visual Studio\18\Community\VC\Auxiliary\Build\vcvars64.bat"
 echo ==========================================================
-echo PASS SCIENCE WORKS -- ONE-CLICK PACKAGING PIPELINE
-echo Target: %CANDIDATE_ID%_Workbench.zip
+echo PASS SCIENCE WORKS - VERIFIED RELEASE PACKAGING
+echo Candidate archive: %CANDIDATE_ID%_Workbench.zip
 echo ==========================================================
-
-rem 1. Build if needed
+if not exist "%WINDEPLOYQT%" (echo [ERROR] windeployqt not found: %WINDEPLOYQT% & exit /b 1)
+rem CI's MSVC action already initializes the environment; otherwise invoke vcvars.
+if not defined VCToolsRedistDir (
+    if not exist "%VSVARS%" (echo [ERROR] MSVC toolchain not initialized; vcvars64.bat missing: %VSVARS% & exit /b 1)
+    call "%VSVARS%" >nul
+    if errorlevel 1 (echo [ERROR] Failed to initialize Visual C++ environment. & exit /b 1)
+)
+if not defined VCToolsRedistDir (echo [ERROR] Licensed Visual C++ redist path unavailable. & exit /b 1)
+set "CRT_SOURCE="
+set "REDIST_BASE=%VCToolsRedistDir%"
+if not "%REDIST_BASE:~-1%"=="\" set "REDIST_BASE=%REDIST_BASE%\"
+for /d %%D in ("%REDIST_BASE%x64\Microsoft.VC*.CRT") do (
+    if exist "%%~fD\msvcp140.dll" if exist "%%~fD\vcruntime140.dll" set "CRT_SOURCE=%%~fD"
+)
+if not defined CRT_SOURCE (echo [ERROR] Licensed CRT directory not found below %REDIST_BASE%x64. & exit /b 1)
+if not exist "%CRT_SOURCE%\vcruntime140.dll" (echo [ERROR] CRT source is missing vcruntime140.dll. & exit /b 1)
+echo [PACKAGE] Checking Release targets...
 if not exist "%BUILDDIR%\bin\WorkbenchApp.exe" (
-    echo [PACKAGE] Release binary missing. Building first...
     call "%~dp0build_msvc.cmd" Release
-    if errorlevel 1 exit /b 1
+    if errorlevel 1 (echo [ERROR] Release build failed. & exit /b 1)
 )
-
-rem 2. Clean and prepare staging
+if not exist "%BUILDDIR%\bin\Launch.exe" (echo [ERROR] Launch.exe missing from Release build. & exit /b 1)
+if not exist "%BUILDDIR%\bin\WorkbenchApp.exe" (echo [ERROR] WorkbenchApp.exe missing from Release build. & exit /b 1)
+echo [PACKAGE] Preparing staging directory...
 if exist "%DISTDIR%" rmdir /s /q "%DISTDIR%"
-if not exist "%DISTDIR%\bin" mkdir "%DISTDIR%\bin"
+if exist "%DISTDIR%" (echo [ERROR] Failed to remove previous staging directory. & exit /b 1)
+mkdir "%DISTDIR%\bin"
+if errorlevel 1 (echo [ERROR] Failed to create staging directory. & exit /b 1)
 if not exist "%RELEASEDIR%" mkdir "%RELEASEDIR%"
-
-rem 3. Copy binaries
-copy /y "%BUILDDIR%\bin\Launch.exe" "%DISTDIR%\Launch.exe"
-copy /y "%BUILDDIR%\bin\WorkbenchApp.exe" "%DISTDIR%\bin\WorkbenchApp.exe"
-
-rem 4. Run windeployqt
-echo [PACKAGE] Deploying Qt libraries...
-call "%VSVARS%" >nul 2>&1
+if not exist "%RELEASEDIR%" (echo [ERROR] Failed to create release directory. & exit /b 1)
+copy /y "%BUILDDIR%\bin\Launch.exe" "%DISTDIR%\Launch.exe" >nul
+if errorlevel 1 (echo [ERROR] Failed to stage Launch.exe. & exit /b 1)
+copy /y "%BUILDDIR%\bin\WorkbenchApp.exe" "%DISTDIR%\bin\WorkbenchApp.exe" >nul
+if errorlevel 1 (echo [ERROR] Failed to stage WorkbenchApp.exe. & exit /b 1)
+echo [PACKAGE] Deploying Qt runtime...
 "%WINDEPLOYQT%" --release --no-translations --no-compiler-runtime --dir "%DISTDIR%\bin" "%DISTDIR%\bin\WorkbenchApp.exe"
-
-rem 5. Copy MSVC Runtime Redistributables
-echo [PACKAGE] Deploying MSVC CRT Redistributable DLLs...
-set REDIST_DIR=C:\Program Files\Microsoft Visual Studio\18\Community\VC\Redist\MSVC\14.51.36231\x64\Microsoft.VC145.CRT
-if not exist "%REDIST_DIR%" set REDIST_DIR=C:\Program Files\Microsoft Visual Studio\18\Community\VC\Redist\MSVC\14.51.36231\x64\Microsoft.VC143.CRT
-if exist "%REDIST_DIR%" (
-    copy /y "%REDIST_DIR%\*.dll" "%DISTDIR%\bin\"
-) else (
-    copy /y "C:\Windows\System32\msvcp140*.dll" "%DISTDIR%\bin\"
-    copy /y "C:\Windows\System32\vcruntime140*.dll" "%DISTDIR%\bin\"
-)
-
-rem 6. Copy source, documentation, test data, and configurations
-echo [PACKAGE] Packaging source tree, test suite, and documentation...
-if exist "%ROOTDIR%\data" xcopy /e /i /y "%ROOTDIR%\data" "%DISTDIR%\data"
-if exist "%ROOTDIR%\docs" xcopy /e /i /y "%ROOTDIR%\docs" "%DISTDIR%\docs"
-if exist "%ROOTDIR%\src" xcopy /e /i /y "%ROOTDIR%\src" "%DISTDIR%\src"
-if exist "%ROOTDIR%\tests" xcopy /e /i /y "%ROOTDIR%\tests" "%DISTDIR%\tests"
-if exist "%ROOTDIR%\scripts" xcopy /e /i /y "%ROOTDIR%\scripts" "%DISTDIR%\scripts"
-if exist "%ROOTDIR%\results" xcopy /e /i /y "%ROOTDIR%\results" "%DISTDIR%\results"
-if exist "%ROOTDIR%\.vscode" xcopy /e /i /y "%ROOTDIR%\.vscode" "%DISTDIR%\.vscode"
-copy /y "%ROOTDIR%\CMakeLists.txt" "%DISTDIR%\"
-copy /y "%ROOTDIR%\README.md" "%DISTDIR%\"
-copy /y "%ROOTDIR%\LICENSE" "%DISTDIR%\"
-if exist "%ROOTDIR%\CMakePresets.json" copy /y "%ROOTDIR%\CMakePresets.json" "%DISTDIR%\"
-if exist "%ROOTDIR%\FINAL_SUBMISSION_GATE.md" copy /y "%ROOTDIR%\FINAL_SUBMISSION_GATE.md" "%DISTDIR%\"
-
-rem 6b. Generate Git repository bundle for offline commit history inspection
-echo [PACKAGE] Bundling Git commit history...
-git bundle create "%DISTDIR%\repository_bundle.bundle" --all >nul 2>&1
-
-rem 7. Compress into ZIP archive via PowerShell
-set ZIPNAME=%CANDIDATE_ID%_Workbench.zip
-set ZIPPATH=%RELEASEDIR%\%ZIPNAME%
+if errorlevel 1 (echo [ERROR] Qt deployment failed. & exit /b 1)
+if not exist "%DISTDIR%\bin\Qt6Core.dll" (echo [ERROR] Qt6Core.dll missing after windeployqt. & exit /b 1)
+if not exist "%DISTDIR%\bin\platforms\qwindows.dll" (echo [ERROR] qwindows.dll missing after windeployqt. & exit /b 1)
+echo [PACKAGE] Deploying licensed Visual C++ runtime from %CRT_SOURCE%...
+copy /y "%CRT_SOURCE%\*.dll" "%DISTDIR%\bin\" >nul
+if errorlevel 1 (echo [ERROR] CRT deployment failed. & exit /b 1)
+if not exist "%DISTDIR%\bin\msvcp140.dll" (echo [ERROR] msvcp140.dll missing. & exit /b 1)
+if not exist "%DISTDIR%\bin\vcruntime140.dll" (echo [ERROR] vcruntime140.dll missing. & exit /b 1)
+rem Never copy runtime libraries from C:\Windows\System32.
+echo [PACKAGE] Copying required source, tests, data, evidence, and editor configuration...
+if not exist "%ROOTDIR%\data\" (echo [ERROR] Required source directory missing: data. & exit /b 1)
+xcopy /e /i /y "%ROOTDIR%\data" "%DISTDIR%\data" >nul
+if errorlevel 1 (echo [ERROR] Failed to copy data. & exit /b 1)
+if not exist "%ROOTDIR%\docs\" (echo [ERROR] Required source directory missing: docs. & exit /b 1)
+xcopy /e /i /y "%ROOTDIR%\docs" "%DISTDIR%\docs" >nul
+if errorlevel 1 (echo [ERROR] Failed to copy docs. & exit /b 1)
+if not exist "%ROOTDIR%\src\" (echo [ERROR] Required source directory missing: src. & exit /b 1)
+xcopy /e /i /y "%ROOTDIR%\src" "%DISTDIR%\src" >nul
+if errorlevel 1 (echo [ERROR] Failed to copy src. & exit /b 1)
+if not exist "%ROOTDIR%\tests\" (echo [ERROR] Required source directory missing: tests. & exit /b 1)
+xcopy /e /i /y "%ROOTDIR%\tests" "%DISTDIR%\tests" >nul
+if errorlevel 1 (echo [ERROR] Failed to copy tests. & exit /b 1)
+if not exist "%ROOTDIR%\scripts\" (echo [ERROR] Required source directory missing: scripts. & exit /b 1)
+xcopy /e /i /y "%ROOTDIR%\scripts" "%DISTDIR%\scripts" >nul
+if errorlevel 1 (echo [ERROR] Failed to copy scripts. & exit /b 1)
+if not exist "%ROOTDIR%\results\" (echo [ERROR] Required source directory missing: results. & exit /b 1)
+xcopy /e /i /y "%ROOTDIR%\results" "%DISTDIR%\results" >nul
+if errorlevel 1 (echo [ERROR] Failed to copy results. & exit /b 1)
+if not exist "%ROOTDIR%\.vscode\" (echo [ERROR] Required source directory missing: .vscode. & exit /b 1)
+xcopy /e /i /y "%ROOTDIR%\.vscode" "%DISTDIR%\.vscode" >nul
+if errorlevel 1 (echo [ERROR] Failed to copy .vscode. & exit /b 1)
+if not exist "%ROOTDIR%\CMakeLists.txt" (echo [ERROR] Required file missing: CMakeLists.txt. & exit /b 1)
+copy /y "%ROOTDIR%\CMakeLists.txt" "%DISTDIR%\" >nul
+if errorlevel 1 (echo [ERROR] Failed to stage CMakeLists.txt. & exit /b 1)
+if not exist "%ROOTDIR%\CMakePresets.json" (echo [ERROR] Required file missing: CMakePresets.json. & exit /b 1)
+copy /y "%ROOTDIR%\CMakePresets.json" "%DISTDIR%\" >nul
+if errorlevel 1 (echo [ERROR] Failed to stage CMakePresets.json. & exit /b 1)
+if not exist "%ROOTDIR%\README.md" (echo [ERROR] Required file missing: README.md. & exit /b 1)
+copy /y "%ROOTDIR%\README.md" "%DISTDIR%\" >nul
+if errorlevel 1 (echo [ERROR] Failed to stage README.md. & exit /b 1)
+if not exist "%ROOTDIR%\LICENSE" (echo [ERROR] Required file missing: LICENSE. & exit /b 1)
+copy /y "%ROOTDIR%\LICENSE" "%DISTDIR%\" >nul
+if errorlevel 1 (echo [ERROR] Failed to stage LICENSE. & exit /b 1)
+if not exist "%ROOTDIR%\FINAL_SUBMISSION_GATE.md" (echo [ERROR] Required file missing: FINAL_SUBMISSION_GATE.md. & exit /b 1)
+copy /y "%ROOTDIR%\FINAL_SUBMISSION_GATE.md" "%DISTDIR%\" >nul
+if errorlevel 1 (echo [ERROR] Failed to stage FINAL_SUBMISSION_GATE.md. & exit /b 1)
+echo [PACKAGE] Creating offline Git history bundle...
+git -C "%ROOTDIR%" bundle create "%DISTDIR%\repository_bundle.bundle" --all
+if errorlevel 1 (echo [ERROR] Git bundle creation failed. & exit /b 1)
+if not exist "%DISTDIR%\repository_bundle.bundle" (echo [ERROR] Git bundle is missing. & exit /b 1)
+git -C "%ROOTDIR%" bundle verify "%DISTDIR%\repository_bundle.bundle" >nul
+if errorlevel 1 (echo [ERROR] Git bundle verification failed. & exit /b 1)
+set "ZIPNAME=%CANDIDATE_ID%_Workbench.zip"
+set "ZIPPATH=%RELEASEDIR%\%ZIPNAME%"
 if exist "%ZIPPATH%" del /f /q "%ZIPPATH%"
-
-echo [PACKAGE] Compressing into %ZIPPATH%...
-powershell -NoProfile -Command "Compress-Archive -Path '%DISTDIR%\*' -DestinationPath '%ZIPPATH%' -CompressionLevel Optimal"
-
-rem 8. Generate SHA256 checksum
-powershell -NoProfile -Command "$h = (Get-FileHash '%ZIPPATH%' -Algorithm SHA256).Hash; Set-Content '%RELEASEDIR%\%CANDIDATE_ID%_Workbench.sha256' -Value \"$h  %ZIPNAME%\""
-
-echo ==========================================================
-echo PACKAGE CREATED SUCCESSFULLY: %ZIPPATH%
-echo ==========================================================
+if exist "%ZIPPATH%" (echo [ERROR] Cannot replace previous ZIP. & exit /b 1)
+echo [PACKAGE] Compressing verified distribution...
+powershell.exe -NoProfile -NonInteractive -Command "$ErrorActionPreference='Stop'; Compress-Archive -Path '%DISTDIR%\*' -DestinationPath '%ZIPPATH%' -CompressionLevel Optimal; if (!(Test-Path -LiteralPath '%ZIPPATH%')) { throw 'ZIP was not created' }"
+if errorlevel 1 (echo [ERROR] ZIP compression failed. & exit /b 1)
+echo [PACKAGE] Computing SHA-256...
+powershell.exe -NoProfile -NonInteractive -Command "$ErrorActionPreference='Stop'; $z='%ZIPPATH%'; if (!(Test-Path -LiteralPath $z)) { throw 'ZIP missing for hashing' }; $h=(Get-FileHash -LiteralPath $z -Algorithm SHA256).Hash; Set-Content -LiteralPath '%RELEASEDIR%\%CANDIDATE_ID%_Workbench.sha256' -Encoding ASCII -Value ($h + '  %ZIPNAME%')"
+if errorlevel 1 (echo [ERROR] SHA-256 generation failed. & exit /b 1)
+if not exist "%RELEASEDIR%\%CANDIDATE_ID%_Workbench.sha256" (echo [ERROR] Checksum file missing. & exit /b 1)
+echo [PACKAGE] Verifying archive integrity, binaries, and hash...
+python "%ROOTDIR%\scripts\verify_extracted_archive.py" "%CANDIDATE_ID%"
+if errorlevel 1 (echo [ERROR] Archive acceptance verification failed. & exit /b 1)
+echo [PASS] Release archive and SHA-256 verified: %ZIPPATH%
 exit /b 0
