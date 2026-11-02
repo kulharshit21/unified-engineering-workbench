@@ -96,30 +96,6 @@ def verify_extraction():
         return False
     print('[PASS] SHA-256 sidecar matches archive bytes.')
 
-    # Verify checksum sidecar against the exact archive under test.
-    import hashlib
-    hash_path = os.path.join(repo_root, 'release', f'{candidate_id}_Workbench.sha256')
-    if not os.path.isfile(hash_path):
-        print('[FAIL] SHA-256 sidecar is missing.')
-        return False
-    try:
-        with open(hash_path, encoding='ascii') as sidecar:
-            recorded = sidecar.read().strip().split()
-    except (OSError, UnicodeError) as exc:
-        print(f'[FAIL] Unable to read SHA-256 sidecar: {exc}')
-        return False
-    if len(recorded) != 2 or recorded[1] != os.path.basename(zip_path):
-        print('[FAIL] SHA-256 sidecar format or filename mismatch.')
-        return False
-    digest = hashlib.sha256()
-    with open(zip_path, 'rb') as archive_stream:
-        for chunk in iter(lambda: archive_stream.read(1024 * 1024), b''):
-            digest.update(chunk)
-    if digest.hexdigest().lower() != recorded[0].lower():
-        print('[FAIL] SHA-256 digest mismatch.')
-        return False
-    print('[PASS] SHA-256 checksum verified.')
-
     # Check essential directories and files
     required_entries = ['data', 'docs', 'src', 'tests', 'results', 'CMakeLists.txt', 'CMakePresets.json', 'README.md', 'FINAL_SUBMISSION_GATE.md']
     for entry in required_entries:
