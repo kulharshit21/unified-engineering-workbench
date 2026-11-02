@@ -97,7 +97,7 @@ def verify_extraction():
     print('[PASS] SHA-256 sidecar matches archive bytes.')
 
     # Check essential directories and files
-    required_entries = ['data', 'docs', 'src', 'tests', 'results', 'CMakeLists.txt', 'CMakePresets.json', 'README.md', 'FINAL_SUBMISSION_GATE.md']
+    required_entries = ['data', 'docs', 'src', 'tests', 'scripts', 'results', '.vscode', 'CMakeLists.txt', 'CMakePresets.json', 'README.md', 'LICENSE', 'FINAL_SUBMISSION_GATE.md']
     for entry in required_entries:
         path = os.path.join(tmp_dir, entry)
         if not os.path.exists(path):
