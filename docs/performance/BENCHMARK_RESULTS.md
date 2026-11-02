@@ -19,9 +19,9 @@ Workload: 1,000 independent 1D thermal FEA solves, $N = 80$ linear elements, 5 r
 
 | Workers ($p$) | Median Time (ms) | Mean Time (ms) | Min Time (ms) | Max Time (ms) | Speedup ($S_p$) | Parallel Efficiency ($E_p$) | Max Delta vs. Serial (°C) | Status |
 |:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| **1** | 1.85 | 1.87 | 1.79 | 1.94 | **1.00x** | 100.0% | $0.0000 \times 10^{-15}$ | **PASS** |
-| **2** | 1.24 | 1.33 | 1.15 | 1.78 | **1.49x** | 74.5% | $0.0000 \times 10^{-15}$ | **PASS** |
-| **4** | 0.85 | 0.90 | 0.80 | 1.08 | **2.19x** | 54.8% | $0.0000 \times 10^{-15}$ | **PASS** |
+| **1** | 1.81 | 1.84 | 1.75 | 1.94 | **1.00x** | 100.0% | $0.0000 \times 10^{-15}$ | **PASS** |
+| **2** | 1.12 | 1.15 | 1.06 | 1.27 | **1.62x** | 80.8% | $0.0000 \times 10^{-15}$ | **PASS** |
+| **4** | 0.70 | 0.71 | 0.69 | 0.74 | **2.57x** | 64.3% | $0.0000 \times 10^{-15}$ | **PASS** |
 
 ### Numerical Determinism
 Across all 1,000 cases and all 81 nodal outputs ($81,000$ solved floating-point temperatures), the maximum absolute discrepancy between serial and multithreaded solutions was identically **$0.0000 \times 10^{-15\circ}\text{C}$**, satisfying the strict assignment tolerance $\le 1.0 \times 10^{-8\circ}\text{C}$.
@@ -34,10 +34,10 @@ To demonstrate sustained multi-core scaling beyond the Windows OS scheduling qua
 
 | Workers ($p$) | Median Time (ms) | Mean Time (ms) | Min Time (ms) | Max Time (ms) | Speedup ($S_p$) | Parallel Efficiency ($E_p$) | Max Delta vs. Serial (°C) | Status |
 |:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| **1** | 20.41 | 20.62 | 19.25 | 21.69 | **1.00x** | 100.0% | $0.0000 \times 10^{-15}$ | **PASS** |
-| **2** | 11.25 | 11.14 | 10.30 | 11.66 | **1.81x** | **90.7%** | $0.0000 \times 10^{-15}$ | **PASS** |
-| **4** | 6.54 | 6.57 | 6.11 | 6.91 | **3.12x** | **78.0%** | $0.0000 \times 10^{-15}$ | **PASS** |
-| **8** | 4.67 | 4.57 | 3.96 | 5.02 | **4.37x** | **54.6%** | $0.0000 \times 10^{-15}$ | **PASS** |
+| **1** | 18.95 | 18.86 | 18.16 | 19.46 | **1.00x** | 100.0% | $0.0000 \times 10^{-15}$ | **PASS** |
+| **2** | 11.11 | 11.59 | 10.07 | 14.53 | **1.71x** | **85.3%** | $0.0000 \times 10^{-15}$ | **PASS** |
+| **4** | 6.11 | 6.22 | 5.87 | 6.73 | **3.10x** | **77.6%** | $0.0000 \times 10^{-15}$ | **PASS** |
+| **8** | 4.35 | 4.43 | 4.09 | 4.80 | **4.36x** | **54.4%** | $0.0000 \times 10^{-15}$ | **PASS** |
 
 ---
 
@@ -50,5 +50,5 @@ To demonstrate sustained multi-core scaling beyond the Windows OS scheduling qua
 *Figure 4.2: Parallel Efficiency ($E_p = S_p / p$) illustrating how workload amortization overcomes thread synchronization and condition variable wake latencies.*
 
 ### Key Architectural Takeaways
-1. **Synchronization Overhead Amortization**: For the 1,000-case workload (1.85 ms serial), thread pool wakeups and queue locks consume ~0.4 ms, limiting 4-worker efficiency to $54.8\%$. Expanding to 10,000 cases (20.41 ms serial) amortizes these fixed synchronization costs, lifting 4-worker efficiency to **$78.0\%$** and 2-worker efficiency to **$90.7\%$**.
+1. **Synchronization Overhead Amortization**: For the 1,000-case workload (1.81 ms serial), thread pool wakeups and queue locks consume ~0.4 ms, limiting 4-worker efficiency to $64.3\%$. Expanding to 10,000 cases (18.95 ms serial) amortizes these fixed synchronization costs, lifting 4-worker efficiency to **$77.6\%$** and 2-worker efficiency to **$85.3\%$**.
 2. **Deterministic Reproducibility**: Because tasks are self-contained and pre-allocated before dispatch, work-stealing/queue distribution introduces zero race conditions or floating-point non-associativity drift.

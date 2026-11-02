@@ -23,7 +23,8 @@ BenchmarkSuiteResult BenchmarkEngine::runSuite(
     int meshElements,
     const std::vector<size_t> &workerCounts,
     int repetitions,
-    uint32_t seed) {
+    uint32_t seed,
+    std::atomic<bool> *cancelToken) {
 
     BenchmarkSuiteResult suite;
     suite.cpuModel = "AMD Ryzen AI 9 HX 370 w/ Radeon 890M";
@@ -32,6 +33,7 @@ BenchmarkSuiteResult BenchmarkEngine::runSuite(
     suite.caseCount = caseCount;
     suite.meshElements = meshElements;
     suite.seed = seed;
+    suite.cancelled = false;
 
     // 1. Generate pre-allocated deterministic test batch
     std::vector<ThermalCase> cases = BatchGenerator::generateDeterministicBatch(caseCount, meshElements, seed);
@@ -48,6 +50,12 @@ BenchmarkSuiteResult BenchmarkEngine::runSuite(
     double baselineMedianMs = 0.0;
 
     for (size_t workers : workerCounts) {
+        // Cooperative cancellation check: before each worker configuration
+        if (cancelToken && cancelToken->load(std::memory_order_relaxed)) {
+            suite.cancelled = true;
+            return suite;
+        }
+
         WorkerBenchmarkResult res;
         res.workerCount = workers;
         res.repetitionTimesMs.reserve(repetitions);
@@ -55,6 +63,12 @@ BenchmarkSuiteResult BenchmarkEngine::runSuite(
         std::vector<CaseResult> lastRunResults;
 
         for (int r = 0; r < repetitions; ++r) {
+            // Cooperative cancellation check: between repetitions
+            if (cancelToken && cancelToken->load(std::memory_order_relaxed)) {
+                suite.cancelled = true;
+                return suite;
+            }
+
             auto tStart = std::chrono::steady_clock::now();
             if (workers == 1) {
                 lastRunResults = BatchSolver::solveSerial(cases);

@@ -26,14 +26,14 @@
 
 ---
 
-## ADR-003: OpenGL 3.3 Core Profile for 3D Geometry and Point Cloud Rendering
+## ADR-003: Software 3D Viewport (`QWidget` + `QPainter` with 3D Projection & Depth Sorting)
 
-* **Status**: Accepted
-* **Context**: Need to render ASCII STL triangles (rotate, pan, zoom, fit) and CSV temperature nodes (colored point cloud, legend, node inspection).
-* **Decision**: Implement custom OpenGL shaders using `QOpenGLWidget` and modern Vertex Buffer Objects (VBO) / Vertex Array Objects (VAO).
+* **Status**: Accepted (Supersedes initial OpenGL 3.3 prototype)
+* **Context**: Need to render ASCII STL triangles (rotate, pan, zoom, fit) and CSV temperature nodes (colored point cloud, legend, node inspection) reliably across diverse environments, including virtual machines, remote desktops, and automated headless screenshot capture (`QWidget::grab()`).
+* **Decision**: Implement the 3D viewport (`OpenGLViewport`) as a direct `QWidget` utilizing Qt's antialiased `QPainter` with manual 3D perspective projection matrices (`QMatrix4x4`), depth-sorted painter's algorithm, and directional Lambertian surface shading.
 * **Consequences**:
-  * Positive: Leverages the laptop's dedicated RTX 5070 Ti GPU for smooth 120 FPS rendering. Zero third-party CAD dependencies (e.g. OpenCASCADE, VTK). 100% LGPLv3 compliant.
-  * Negative: Requires writing GLSL shaders and camera math (view/projection matrices) manually in C++.
+  * Positive: 100% portable and robust across all Windows display configurations, graphics drivers, and virtual machines without requiring hardware OpenGL 3.3 core profiles. Guarantees deterministic rendering during offscreen/headless capture without FBO blanking. Zero third-party CAD dependencies.
+  * Negative: CPU-bound rasterization; optimal for engineering meshes up to ~50,000 facets rather than massive multi-million polygon models.
 
 ---
 

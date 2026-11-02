@@ -15,26 +15,26 @@ Modern multi-disciplinary aerospace and scientific computing environments requir
 
 The **Unified Engineering Workbench** delivers an end-to-end, production-grade workstation application satisfying all six technical tasks (Tasks A–F) and mandatory gates specified in the PASS SCIENCE WORKS R&D Common Internship brief. The application is built upon a modular, decoupled architecture:
 1. **Core Numerical & Engineering Engine (`WorkbenchCore`)**: Developed in pure C++17 with zero dependencies on graphical frameworks, third-party linear algebra libraries, or Python runtimes. All algorithms utilize standard library primitives and explicit memory-aligned structures.
-2. **Interactive Desktop Interface (`WorkbenchApp`)**: Developed using Qt 6.8.2 Widgets with custom high-DPI rendering components: `PlotWidget` (an antialiased, hardware-accelerated 2D scientific curve plotter) and `OpenGLViewport` (an interactive 3D viewport featuring orbit, pan, zoom, surface normal lighting, Turbo/Jet scalar colormapping, and screen-space nearest-node picking).
+2. **Interactive Desktop Interface (`WorkbenchApp`)**: Developed using Qt 6.8.2 Widgets with custom high-DPI rendering components: `PlotWidget` (an antialiased 2D scientific curve plotter) and `OpenGLViewport` (an interactive 3D viewport featuring orbit, pan, zoom, surface normal lighting, Turbo/Jet scalar colormapping, and screen-space nearest-node picking, built via `QWidget` with `QPainter` 3D projection for universal environment and capture reliability).
 3. **Standalone Relocatable Release Runtime**: Initiated by `Launch.exe`, a zero-dependency native Win32 executable that bootstraps the application offline on any standard Windows 11 x64 machine without terminal windows, administrator rights, or pre-installed software.
 
 ```
-+---------------------------------------------------------------------------------------------------------+
-|                                      UNIFIED DESKTOP APPLICATION (Qt 6)                                 |
-|  +--------------------+---------------------+---------------------+-------------------+---------------+ |
-|  | Tab 1: CAD / ANSYS | Tab 2: Thermal FEA  | Tab 3: Multicore CPU| Tab 4: Embedded   | Tab 5: Back-  | |
-|  | 3D Visualization   | 1D Rod Solver       | Parallel Scaling    | Target Coprocessor| propagation   | |
-|  +--------------------+---------------------+---------------------+-------------------+---------------+ |
-+---------------------------------------------------------------------------------------------------------+
-                                                     |
-                                                     v
-+---------------------------------------------------------------------------------------------------------+
-|                                    C++17 PURE NUMERICAL BACKEND                                         |
-|  - StlParser (ASCII STL)      - ThermalFeaSolver (Thomas Tri.)  - ThreadPool (Bounded Workers)          |
-|  - TemperatureCsvParser       - Midpoint Error Superconvergence - BenchmarkEngine (Sp, Ep Scaling)      |
-|  - Colormap (Turbo / Jet)     - ConvergenceAnalyzer (p = 2.0)   - IDeviceAdapter / DeviceManager Mocks  |
-|  - BackpropagationSolver (Analytical Gradients, Finite Differences eps=1e-6, Simultaneous Updates)      |
-+---------------------------------------------------------------------------------------------------------+
++------------------------------------------------------------------------+
+|                   UNIFIED DESKTOP APPLICATION (Qt 6)                   |
+| +--------------+---------------+---------------+----------+----------+ |
+| | Tab 1: 3D CAD| Tab 2: Thermal| Tab 3: Multi- | Tab 4:   | Tab 5:   | |
+| | & ANSYS Mesh | 1D Rod FEA    | core Scaling  | Embedded | Backprop | |
+| +--------------+---------------+---------------+----------+----------+ |
++------------------------------------------------------------------------+
+                                   |
+                                   v
++------------------------------------------------------------------------+
+|                      C++17 PURE NUMERICAL BACKEND                      |
+| * StlParser (ASCII STL)           * ThermalFeaSolver (Thomas O(N) TDMA)|
+| * TemperatureCsvParser            * Midpoint Superconvergence (e=125h2)|
+| * Colormap (Turbo / Jet)          * ThreadPool & BenchmarkEngine       |
+| * IDeviceAdapter / Mocks          * Backpropagation (Analytical & FD)  |
++------------------------------------------------------------------------+
 ```
 
 ---
@@ -108,16 +108,16 @@ Timings and scaling factors recorded in `results/performance/summary.csv` and `s
 
 | Workload Configuration | Workers ($p$) | Median Time (ms) | Mean Time (ms) | Min Time (ms) | Speedup ($S_p = T_1 / T_p$) | Efficiency ($E_p$) | Max Delta vs Serial |
 |:---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| **Standard (1,000 cases)** | **1** | $1.77$ | $1.76$ | $1.68$ | $1.00\times$ | 100.0% | $0.0000 \times 10^{-15\circ}\text{C}$ |
-| Standard (1,000 cases) | **2** | $1.14$ | $1.27$ | $1.03$ | $1.55\times$ | 77.7% | $0.0000 \times 10^{-15\circ}\text{C}$ |
-| Standard (1,000 cases) | **4** | $0.71$ | $0.77$ | $0.66$ | **$2.52\times$** | 62.9% | $0.0000 \times 10^{-15\circ}\text{C}$ |
-| **Extended (10,000 cases)**| **1** | $18.65$ | $18.71$ | $18.19$ | $1.00\times$ | 100.0% | $0.0000 \times 10^{-15\circ}\text{C}$ |
-| Extended (10,000 cases)| **2** | $10.46$ | $10.40$ | $9.73$ | **$1.78\times$** | **89.1%** | $0.0000 \times 10^{-15\circ}\text{C}$ |
-| Extended (10,000 cases)| **4** | $5.78$ | $5.91$ | $5.67$ | **$3.23\times$** | **80.7%** | $0.0000 \times 10^{-15\circ}\text{C}$ |
-| Extended (10,000 cases)| **8** | $4.35$ | $4.30$ | $3.89$ | **$4.29\times$** | **53.6%** | $0.0000 \times 10^{-15\circ}\text{C}$ |
+| **Standard (1,000 cases)** | **1** | $1.81$ | $1.84$ | $1.75$ | $1.00\times$ | 100.0% | $0.0000 \times 10^{-15\circ}\text{C}$ |
+| Standard (1,000 cases) | **2** | $1.12$ | $1.15$ | $1.06$ | $1.62\times$ | 80.8% | $0.0000 \times 10^{-15\circ}\text{C}$ |
+| Standard (1,000 cases) | **4** | $0.70$ | $0.71$ | $0.69$ | **$2.57\times$** | 64.3% | $0.0000 \times 10^{-15\circ}\text{C}$ |
+| **Extended (10,000 cases)**| **1** | $18.95$ | $18.86$ | $18.16$ | $1.00\times$ | 100.0% | $0.0000 \times 10^{-15\circ}\text{C}$ |
+| Extended (10,000 cases)| **2** | $11.11$ | $11.59$ | $10.07$ | **$1.71\times$** | **85.3%** | $0.0000 \times 10^{-15\circ}\text{C}$ |
+| Extended (10,000 cases)| **4** | $6.11$ | $6.22$ | $5.87$ | **$3.10\times$** | **77.6%** | $0.0000 \times 10^{-15\circ}\text{C}$ |
+| Extended (10,000 cases)| **8** | $4.35$ | $4.43$ | $4.09$ | **$4.36\times$** | **54.4%** | $0.0000 \times 10^{-15\circ}\text{C}$ |
 
 ### 4.3 Scalability & Numerical Agreement Insights
-1. **Overhead Amortization**: For the 1,000-case workload (1.77 ms serial), thread pool wakeups and queue locks consume ~0.4 ms, limiting 4-worker efficiency to $62.9\%$. Expanding to 10,000 cases (18.65 ms serial) amortizes these fixed synchronization costs, lifting 4-worker efficiency to **$80.7\%$** and 2-worker efficiency to **$89.1\%$**.
+1. **Overhead Amortization**: For the 1,000-case workload (1.81 ms serial), thread pool wakeups and queue locks consume ~0.4 ms, limiting 4-worker efficiency to $64.3\%$. Expanding to 10,000 cases (18.95 ms serial) amortizes these fixed synchronization costs, lifting 4-worker efficiency to **$77.6\%$** and 2-worker efficiency to **$85.3\%$**.
 2. **Deterministic Invariance**: The maximum absolute temperature delta between serial ($p=1$) and parallel ($p=4, 8$) solutions across all nodal evaluations was identically zero ($0.0000 \times 10^{-15\circ}\text{C}$), completely satisfying the required $|\Delta T| \le 10^{-8\circ}\text{C}$ tolerance threshold.
 
 ---

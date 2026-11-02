@@ -287,7 +287,7 @@ html_document = f"""<!DOCTYPE html>
         padding: 5px 7px;
         font-family: Consolas, monospace;
         font-size: 7.5pt;
-        overflow-x: auto;
+        overflow: hidden;
         margin: 5px 0;
         page-break-inside: avoid;
     }}

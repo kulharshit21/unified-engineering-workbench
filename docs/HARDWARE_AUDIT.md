@@ -29,10 +29,10 @@
    * The assignment mandates benchmarking 1, 2, and up to 4 worker configurations (capped at logical CPUs).
    * Since the Ryzen AI 9 HX 370 provides 24 logical processors, 1, 2, and 4 workers operate well within physical core limits (all 4 run on unshared physical Zen 5 cores).
    * Parallel speedup will be measured on physical CPU cores with clean memory bandwidth separation.
-2. **GPU Role Boundary**:
-   * The RTX 5070 Ti Laptop GPU is reserved **strictly for hardware-accelerated 3D viewport rendering** via `QOpenGLWidget` (OpenGL 3.3+ Core profile).
-   * In strict compliance with the assignment rules, **all thermal FEA solutions, serial loops, and parallel batch computations execute on the CPU**. No CUDA compute is substituted for CPU benchmarks.
+2. **Graphics & Compute Role Boundary**:
+   * The 3D geometry and point cloud viewport is engineered via `QWidget` and `QPainter` with CPU-based 3D projection and depth sorting, ensuring 100% universal compatibility across virtual machines, headless CI, and automated screenshot capture without OpenGL driver crashes.
+   * In strict compliance with the assignment rules, **all thermal FEA solutions, serial loops, and parallel batch computations execute on the CPU**. No GPU compute is substituted for CPU benchmarks.
 3. **Memory Budget**:
-   * Peak working set for N=80 thermal solver batches (up to 1,000 cases) is under 50 MB.
-   * Visualizer vertex buffers for ASCII STL geometry (up to 1,000,000 triangles) require under 150 MB VRAM.
-   * Generous safety margins exist across the 32 GB system RAM and 12 GB VRAM.
+   * Peak working set for N=80 thermal solver batches (up to 10,000 cases) is under 50 MB.
+   * Visualizer buffers for ASCII STL geometry (up to 50,000 triangles) require under 30 MB system RAM.
+   * Generous safety margins exist across the 32 GB system RAM.

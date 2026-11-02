@@ -73,7 +73,7 @@
         padding: 5px 7px;
         font-family: Consolas, monospace;
         font-size: 7.5pt;
-        overflow-x: auto;
+        overflow: hidden;
         margin: 5px 0;
         page-break-inside: avoid;
     }
@@ -152,30 +152,30 @@
 <p>Modern multi-disciplinary aerospace and scientific computing environments require high-performance simulation tools that bridge physical finite element analysis (FEA), computer-aided design (CAD) visualization, parallel high-throughput multicore computing, hardware-in-the-loop (HIL) embedded integration, and physics-informed machine learning optimization.</p>
 <p>The <strong>Unified Engineering Workbench</strong> delivers an end-to-end, production-grade workstation application satisfying all six technical tasks (Tasks A–F) and mandatory gates specified in the PASS SCIENCE WORKS R&D Common Internship brief. The application is built upon a modular, decoupled architecture:
 1. <strong>Core Numerical & Engineering Engine (<code>WorkbenchCore</code>)</strong>: Developed in pure C++17 with zero dependencies on graphical frameworks, third-party linear algebra libraries, or Python runtimes. All algorithms utilize standard library primitives and explicit memory-aligned structures.
-2. <strong>Interactive Desktop Interface (<code>WorkbenchApp</code>)</strong>: Developed using Qt 6.8.2 Widgets with custom high-DPI rendering components: <code>PlotWidget</code> (an antialiased, hardware-accelerated 2D scientific curve plotter) and <code>OpenGLViewport</code> (an interactive 3D viewport featuring orbit, pan, zoom, surface normal lighting, Turbo/Jet scalar colormapping, and screen-space nearest-node picking).
+2. <strong>Interactive Desktop Interface (<code>WorkbenchApp</code>)</strong>: Developed using Qt 6.8.2 Widgets with custom high-DPI rendering components: <code>PlotWidget</code> (an antialiased 2D scientific curve plotter) and <code>OpenGLViewport</code> (an interactive 3D viewport featuring orbit, pan, zoom, surface normal lighting, Turbo/Jet scalar colormapping, and screen-space nearest-node picking, built via <code>QWidget</code> with <code>QPainter</code> 3D projection for universal environment and capture reliability).
 3. <strong>Standalone Relocatable Release Runtime</strong>: Initiated by <code>Launch.exe</code>, a zero-dependency native Win32 executable that bootstraps the application offline on any standard Windows 11 x64 machine without terminal windows, administrator rights, or pre-installed software.</p>
 <pre><code>
-+---------------------------------------------------------------------------------------------------------+
++------------------------------------------------------------------------+
 <table class="data-table">
 <tr><th>UNIFIED DESKTOP APPLICATION (Qt 6)</th></tr>
-<tr><td>+--------------------+---------------------+---------------------+-------------------+---------------+</td></tr>
-<tr><td></td><td>Tab 1: CAD / ANSYS</td><td>Tab 2: Thermal FEA</td><td>Tab 3: Multicore CPU</td><td>Tab 4: Embedded</td><td>Tab 5: Back-</td><td></td></tr>
-<tr><td></td><td>3D Visualization</td><td>1D Rod Solver</td><td>Parallel Scaling</td><td>Target Coprocessor</td><td>propagation</td><td></td></tr>
-<tr><td>+--------------------+---------------------+---------------------+-------------------+---------------+</td></tr>
+<tr><td>+--------------+---------------+---------------+----------+----------+</td></tr>
+<tr><td></td><td>Tab 1: 3D CAD</td><td>Tab 2: Thermal</td><td>Tab 3: Multi-</td><td>Tab 4:</td><td>Tab 5:</td><td></td></tr>
+<tr><td></td><td>& ANSYS Mesh</td><td>1D Rod FEA</td><td>core Scaling</td><td>Embedded</td><td>Backprop</td><td></td></tr>
+<tr><td>+--------------+---------------+---------------+----------+----------+</td></tr>
 </table>
-+---------------------------------------------------------------------------------------------------------+
++------------------------------------------------------------------------+
 <table class="data-table">
 </table>
-                                                     v
-+---------------------------------------------------------------------------------------------------------+
+                                   v
++------------------------------------------------------------------------+
 <table class="data-table">
 <tr><th>C++17 PURE NUMERICAL BACKEND</th></tr>
-<tr><td>- StlParser (ASCII STL)      - ThermalFeaSolver (Thomas Tri.)  - ThreadPool (Bounded Workers)</td></tr>
-<tr><td>- TemperatureCsvParser       - Midpoint Error Superconvergence - BenchmarkEngine (Sp, Ep Scaling)</td></tr>
-<tr><td>- Colormap (Turbo / Jet)     - ConvergenceAnalyzer (p = 2.0)   - IDeviceAdapter / DeviceManager Mocks</td></tr>
-<tr><td>- BackpropagationSolver (Analytical Gradients, Finite Differences eps=1e-6, Simultaneous Updates)</td></tr>
+<tr><td><em> StlParser (ASCII STL)           </em> ThermalFeaSolver (Thomas O(N) TDMA)</td></tr>
+<tr><td><em> TemperatureCsvParser            </em> Midpoint Superconvergence (e=125h2)</td></tr>
+<tr><td><em> Colormap (Turbo / Jet)          </em> ThreadPool & BenchmarkEngine</td></tr>
+<tr><td><em> IDeviceAdapter / Mocks          </em> Backpropagation (Analytical & FD)</td></tr>
 </table>
-+---------------------------------------------------------------------------------------------------------+
++------------------------------------------------------------------------+
 </code></pre>
 <hr/>
 <h2>2. Task B: Existing CAD & ANSYS Finite Element Visualization</h2>
@@ -233,16 +233,16 @@ To assess CPU parallel performance, the workbench implements a thread-pool batch
 Timings and scaling factors recorded in <code>results/performance/summary.csv</code> and <code>summary_extended.csv</code>:
 <table class="data-table">
 <tr><th>Workload Configuration</th><th>Workers (<span class="math-inline">p</span>)</th><th>Median Time (ms)</th><th>Mean Time (ms)</th><th>Min Time (ms)</th><th>Speedup (<span class="math-inline">S_p = T<sub>1</sub> / T_p</span>)</th><th>Efficiency (<span class="math-inline">E_p</span>)</th><th>Max Delta vs Serial</th></tr>
-<tr><td><strong>Standard (1,000 cases)</strong></td><td><strong>1</strong></td><td><span class="math-inline">1.77</span></td><td><span class="math-inline">1.76</span></td><td><span class="math-inline">1.68</span></td><td><span class="math-inline">1.00&times;</span></td><td>100.0%</td><td><span class="math-inline">0.0000 &times; 10<sup>-15\circ</sup><span>C</span></span></td></tr>
-<tr><td>Standard (1,000 cases)</td><td><strong>2</strong></td><td><span class="math-inline">1.14</span></td><td><span class="math-inline">1.27</span></td><td><span class="math-inline">1.03</span></td><td><span class="math-inline">1.55&times;</span></td><td>77.7%</td><td><span class="math-inline">0.0000 &times; 10<sup>-15\circ</sup><span>C</span></span></td></tr>
-<tr><td>Standard (1,000 cases)</td><td><strong>4</strong></td><td><span class="math-inline">0.71</span></td><td><span class="math-inline">0.77</span></td><td><span class="math-inline">0.66</span></td><td><strong><span class="math-inline">2.52&times;</span></strong></td><td>62.9%</td><td><span class="math-inline">0.0000 &times; 10<sup>-15\circ</sup><span>C</span></span></td></tr>
-<tr><td><strong>Extended (10,000 cases)</strong></td><td><strong>1</strong></td><td><span class="math-inline">18.65</span></td><td><span class="math-inline">18.71</span></td><td><span class="math-inline">18.19</span></td><td><span class="math-inline">1.00&times;</span></td><td>100.0%</td><td><span class="math-inline">0.0000 &times; 10<sup>-15\circ</sup><span>C</span></span></td></tr>
-<tr><td>Extended (10,000 cases)</td><td><strong>2</strong></td><td><span class="math-inline">10.46</span></td><td><span class="math-inline">10.40</span></td><td><span class="math-inline">9.73</span></td><td><strong><span class="math-inline">1.78&times;</span></strong></td><td><strong>89.1%</strong></td><td><span class="math-inline">0.0000 &times; 10<sup>-15\circ</sup><span>C</span></span></td></tr>
-<tr><th>Extended (10,000 cases)</th><th><strong>4</strong></th><th><span class="math-inline">5.78</span></th><th><span class="math-inline">5.91</span></th><th><span class="math-inline">5.67</span></th><th><strong><span class="math-inline">3.23&times;</span></strong></th><th><strong>80.7%</strong></th><th><span class="math-inline">0.0000 &times; 10<sup>-15\circ</sup><span>C</span></span></th></tr>
-<tr><td>Extended (10,000 cases)</td><td><strong>8</strong></td><td><span class="math-inline">4.35</span></td><td><span class="math-inline">4.30</span></td><td><span class="math-inline">3.89</span></td><td><strong><span class="math-inline">4.29&times;</span></strong></td><td><strong>53.6%</strong></td><td><span class="math-inline">0.0000 &times; 10<sup>-15\circ</sup><span>C</span></span></td></tr>
+<tr><td><strong>Standard (1,000 cases)</strong></td><td><strong>1</strong></td><td><span class="math-inline">1.81</span></td><td><span class="math-inline">1.84</span></td><td><span class="math-inline">1.75</span></td><td><span class="math-inline">1.00&times;</span></td><td>100.0%</td><td><span class="math-inline">0.0000 &times; 10<sup>-15\circ</sup><span>C</span></span></td></tr>
+<tr><td>Standard (1,000 cases)</td><td><strong>2</strong></td><td><span class="math-inline">1.12</span></td><td><span class="math-inline">1.15</span></td><td><span class="math-inline">1.06</span></td><td><span class="math-inline">1.62&times;</span></td><td>80.8%</td><td><span class="math-inline">0.0000 &times; 10<sup>-15\circ</sup><span>C</span></span></td></tr>
+<tr><td>Standard (1,000 cases)</td><td><strong>4</strong></td><td><span class="math-inline">0.70</span></td><td><span class="math-inline">0.71</span></td><td><span class="math-inline">0.69</span></td><td><strong><span class="math-inline">2.57&times;</span></strong></td><td>64.3%</td><td><span class="math-inline">0.0000 &times; 10<sup>-15\circ</sup><span>C</span></span></td></tr>
+<tr><td><strong>Extended (10,000 cases)</strong></td><td><strong>1</strong></td><td><span class="math-inline">18.95</span></td><td><span class="math-inline">18.86</span></td><td><span class="math-inline">18.16</span></td><td><span class="math-inline">1.00&times;</span></td><td>100.0%</td><td><span class="math-inline">0.0000 &times; 10<sup>-15\circ</sup><span>C</span></span></td></tr>
+<tr><td>Extended (10,000 cases)</td><td><strong>2</strong></td><td><span class="math-inline">11.11</span></td><td><span class="math-inline">11.59</span></td><td><span class="math-inline">10.07</span></td><td><strong><span class="math-inline">1.71&times;</span></strong></td><td><strong>85.3%</strong></td><td><span class="math-inline">0.0000 &times; 10<sup>-15\circ</sup><span>C</span></span></td></tr>
+<tr><th>Extended (10,000 cases)</th><th><strong>4</strong></th><th><span class="math-inline">6.11</span></th><th><span class="math-inline">6.22</span></th><th><span class="math-inline">5.87</span></th><th><strong><span class="math-inline">3.10&times;</span></strong></th><th><strong>77.6%</strong></th><th><span class="math-inline">0.0000 &times; 10<sup>-15\circ</sup><span>C</span></span></th></tr>
+<tr><td>Extended (10,000 cases)</td><td><strong>8</strong></td><td><span class="math-inline">4.35</span></td><td><span class="math-inline">4.43</span></td><td><span class="math-inline">4.09</span></td><td><strong><span class="math-inline">4.36&times;</span></strong></td><td><strong>54.4%</strong></td><td><span class="math-inline">0.0000 &times; 10<sup>-15\circ</sup><span>C</span></span></td></tr>
 </table>
 <h3>4.3 Scalability & Numerical Agreement Insights</h3>
-1. <strong>Overhead Amortization</strong>: For the 1,000-case workload (1.77 ms serial), thread pool wakeups and queue locks consume ~0.4 ms, limiting 4-worker efficiency to <span class="math-inline">62.9\%</span>. Expanding to 10,000 cases (18.65 ms serial) amortizes these fixed synchronization costs, lifting 4-worker efficiency to <strong><span class="math-inline">80.7\%</span></strong> and 2-worker efficiency to <strong><span class="math-inline">89.1\%</span></strong>.
+1. <strong>Overhead Amortization</strong>: For the 1,000-case workload (1.81 ms serial), thread pool wakeups and queue locks consume ~0.4 ms, limiting 4-worker efficiency to <span class="math-inline">64.3\%</span>. Expanding to 10,000 cases (18.95 ms serial) amortizes these fixed synchronization costs, lifting 4-worker efficiency to <strong><span class="math-inline">77.6\%</span></strong> and 2-worker efficiency to <strong><span class="math-inline">85.3\%</span></strong>.
 2. <strong>Deterministic Invariance</strong>: The maximum absolute temperature delta between serial (<span class="math-inline">p=1</span>) and parallel (<span class="math-inline">p=4, 8</span>) solutions across all nodal evaluations was identically zero (<span class="math-inline">0.0000 &times; 10<sup>-15\circ</sup><span>C</span></span>), completely satisfying the required <span class="math-inline">|\Delta T| &le; 10<sup>-8\circ</sup><span>C</span></span> tolerance threshold.
 <hr/>
 <h2>5. Task E: Embedded System Coprocessor Integration & Fault Recovery</h2>

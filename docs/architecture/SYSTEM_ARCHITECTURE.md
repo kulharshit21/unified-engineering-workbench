@@ -27,7 +27,7 @@ graph TD
         V_HW["HardwareView<br/>(MCU / FPGA / JTAG)"]
         V_BP["BackpropView<br/>(Neural Network & Training)"]
         
-        OGL["OpenGLViewport<br/>(QOpenGLWidget 3D View)"]
+        OGL["OpenGLViewport<br/>(QWidget 3D View)"]
         PLOT["PlotWidget<br/>(QPainter 2D Scientific Plots)"]
     end
 
@@ -108,7 +108,7 @@ graph TD
 - **Dependencies**: Qt 6.8.2 (`QtCore`, `QtGui`, `QtWidgets`, `QtOpenGL`, `QtOpenGLWidgets`).
 - **Responsibilities**:
   - Hosts the 5 core workspace tabs with intuitive controls, scientific notation formatting, and real-time validation.
-  - `visualization/OpenGLViewport`: Custom `QOpenGLWidget` supporting orbit/pan/zoom camera manipulation, depth-sorted triangle rendering, Turbo/Jet scalar colormapping, Cartesian tripod orientation indicator, and screen-space nearest-node picking.
+  - `visualization/OpenGLViewport`: Custom `QWidget` 3D viewport utilizing `QPainter` with 3D projection, depth-sorted triangle rendering, Turbo/Jet scalar colormapping, Cartesian tripod orientation indicator, and screen-space nearest-node picking.
   - `widgets/PlotWidget`: Custom lightweight 2D scientific plotting canvas built with `QPainter`, featuring grid lines, auto-scaling axes, multi-curve rendering, and high-DPI font scaling without heavy third-party plotting dependencies.
   - Offloads compute-heavy workloads to asynchronous worker threads or invokes `BenchmarkEngine` with live progress bars to guarantee 60 FPS UI responsiveness.
 

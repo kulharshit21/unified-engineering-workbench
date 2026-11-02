@@ -32,11 +32,22 @@
 
 #define TEST_ASSERT_NEAR(actual, expected, tol) \
     do { \
-        double diff = std::abs(static_cast<double>(actual) - static_cast<double>(expected)); \
+        double _ta = static_cast<double>(actual); \
+        double _te = static_cast<double>(expected); \
+        if (!std::isfinite(_ta) || !std::isfinite(_te)) { \
+            std::cerr << "\n[TEST FAILURE] Non-finite value in TEST_ASSERT_NEAR: (" #actual " vs " #expected ")\n" \
+                      << "  Actual:   " << _ta << "\n" \
+                      << "  Expected: " << _te << "\n" \
+                      << "  (NaN or Inf values always fail the nearness check)\n" \
+                      << "  File:     " << __FILE__ << "\n" \
+                      << "  Line:     " << __LINE__ << "\n" << std::endl; \
+            std::exit(1); \
+        } \
+        double diff = std::abs(_ta - _te); \
         if (diff > (tol)) { \
             std::cerr << "\n[TEST FAILURE] Numerical tolerance exceeded: (" #actual " vs " #expected ")\n" \
-                      << "  Actual:   " << (actual) << "\n" \
-                      << "  Expected: " << (expected) << "\n" \
+                      << "  Actual:   " << _ta << "\n" \
+                      << "  Expected: " << _te << "\n" \
                       << "  Diff:     " << diff << "\n" \
                       << "  Tol:      " << (tol) << "\n" \
                       << "  File:     " << __FILE__ << "\n" \

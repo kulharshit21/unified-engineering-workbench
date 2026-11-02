@@ -91,3 +91,7 @@ foreach(TEST_FILE ${TEST_FILES})
     )
     add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
 endforeach()
+
+# Negative test: test_nan_negative is expected to exit with code 1 (NaN guard fires).
+# CTest's WILL_FAIL TRUE inverts the pass/fail logic so exit(1) == PASS.
+set_tests_properties(test_nan_negative PROPERTIES WILL_FAIL TRUE)

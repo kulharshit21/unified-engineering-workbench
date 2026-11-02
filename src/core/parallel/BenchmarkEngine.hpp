@@ -3,6 +3,7 @@
 #include "BatchSolver.hpp"
 #include <vector>
 #include <string>
+#include <atomic>
 
 namespace Workbench::Core::Parallel {
 
@@ -25,17 +26,21 @@ struct BenchmarkSuiteResult {
     int caseCount{500};
     int meshElements{80};
     uint32_t seed{42};
+    bool cancelled{false}; // true if runSuite() was interrupted early
     std::vector<WorkerBenchmarkResult> workerResults;
 };
 
 class BenchmarkEngine {
 public:
+    // cancelToken: if non-null and set to true, runSuite() stops between
+    // repetitions and returns a partial result with result.cancelled == true.
     static BenchmarkSuiteResult runSuite(
         int caseCount = 1000,
         int meshElements = 80,
         const std::vector<size_t> &workerCounts = {1, 2, 4},
         int repetitions = 5,
-        uint32_t seed = 42
+        uint32_t seed = 42,
+        std::atomic<bool> *cancelToken = nullptr
     );
 
     static std::string exportRawTimingsCsv(const BenchmarkSuiteResult &suite);

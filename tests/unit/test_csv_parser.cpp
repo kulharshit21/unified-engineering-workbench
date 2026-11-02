@@ -8,7 +8,7 @@ using namespace Workbench::Core::Geometry;
 
 int main() {
     std::cout << "========================================================\n";
-    std::cout << "[TEST SUITE] Running Temperature CSV Parser Tests\n";
+    std::cout << "[TEST SUITE] Running Temperature CSV Parser Tests (v1.0.1)\n";
     std::cout << "========================================================\n";
 
     // 1. Valid minimal CSV

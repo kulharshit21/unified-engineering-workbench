@@ -80,7 +80,7 @@ graph TD
 ### Module Breakdown
 - **Geometry & 3D Visualization (Task B)**: Imports ASCII STL surface meshes and ANSYS 5-column nodal temperature datasets (`node_id,x_m,y_m,z_m,temperature_C`). Features 3D camera orbit/pan/zoom, directional lighting, surface normal cross-product recalculation, 4-stop Turbo/Jet scalar colormapping, coordinate tripod, and screen-space nearest-node click inspection.
 - **1D Steady-State Thermal FEA (Task C)**: Discretizes the 1D conducting rod with volumetric heat generation using 2-node linear elements. Solves the assembled tridiagonal system in $O(N)$ operations via the direct Thomas algorithm (TDMA). Mathematically proves nodal superconvergence and confirms exact quadratic midpoint truncation convergence ($p = 2.0000$, $e = \frac{qh^2}{8k} = 125h^2$).
-- **Multicore CPU Scaling (Task D)**: Features a bounded worker thread pool (`ThreadPool.hpp`) with mutex/condition variable synchronization. Benchmarks 1,000 cases (standard workload) and 10,000 cases (extended workload) on an AMD Ryzen AI 9 HX 370, achieving $2.52\times$ speedup on 4 threads for 1,000 cases, and $3.23\times$ on 4 threads ($4.29\times$ on 8 threads) for 10,000 cases with exact binary numerical determinism ($\Delta \le 10^{-15\circ}\text{C}$).
+- **Multicore CPU Scaling (Task D)**: Features a bounded worker thread pool (`ThreadPool.hpp`) with mutex/condition variable synchronization. Benchmarks 1,000 cases (standard workload) and 10,000 cases (extended workload) on an AMD Ryzen AI 9 HX 370, achieving $2.57\times$ speedup on 4 threads for 1,000 cases, and $3.10\times$ on 4 threads ($4.36\times$ on 8 threads) for 10,000 cases with exact binary numerical determinism ($\Delta \le 10^{-15\circ}\text{C}$).
 - **Embedded Coprocessor HAL (Task E)**: Models a multi-coprocessor testbench for Raspberry Pi Pico (RP2040 MCU), Digilent Arty A7-35T (Artix-7 FPGA), and Digilent JTAG-HS2 (auto-sensing VREF from 1.8V to 5.0V). Features live telemetry streaming, simulated 500 ms packet timeout fault injection, and automated 3-retry self-healing recovery. Conspicuously labeled `isSimulated = true`.
 - **Neural Backpropagation Engine (Task F)**: Pure C++17 implementation of a single-hidden-layer tanh regressor. Derives analytical gradients via the multivariate chain rule, verifies all 4 parameters against central finite differences ($\epsilon = 10^{-6}$) within $1.13 \times 10^{-10}$, executes simultaneous gradient descent updates, and converges monotonically over 100 steps from $J = 1.1825 \to 1.7026 \times 10^{-20}$.
 
@@ -115,13 +115,13 @@ Step 0 evaluated at $x = 1.0, y = 2.0, w = 0.5, b = 0.0, v = 1.0, c = 0.0$:
 
 | Workload Configuration | Workers ($p$) | Median Runtime (ms) | Speedup ($S_p = T_1 / T_p$) | Efficiency ($E_p$) | Max Temperature Delta vs. Serial |
 |:---|:---:|:---:|:---:|:---:|:---:|
-| **Standard (1,000 cases, $N=80$)** | 1 | 1.77 ms | $1.00\times$ | 100.0% | $0.0000 \times 10^{-15\circ}\text{C}$ (**Exact**) |
-| Standard (1,000 cases, $N=80$) | 2 | 1.14 ms | $1.55\times$ | 77.7% | $0.0000 \times 10^{-15\circ}\text{C}$ (**Exact**) |
-| Standard (1,000 cases, $N=80$) | 4 | 0.71 ms | **$2.52\times$** | 62.9% | $0.0000 \times 10^{-15\circ}\text{C}$ (**Exact**) |
-| **Extended (10,000 cases, $N=80$)** | 1 | 18.65 ms | $1.00\times$ | 100.0% | $0.0000 \times 10^{-15\circ}\text{C}$ (**Exact**) |
-| Extended (10,000 cases, $N=80$) | 2 | 10.46 ms | **$1.78\times$** | **89.1%** | $0.0000 \times 10^{-15\circ}\text{C}$ (**Exact**) |
-| Extended (10,000 cases, $N=80$) | 4 | 5.78 ms | **$3.23\times$** | **80.7%** | $0.0000 \times 10^{-15\circ}\text{C}$ (**Exact**) |
-| Extended (10,000 cases, $N=80$) | 8 | 4.35 ms | **$4.29\times$** | **53.6%** | $0.0000 \times 10^{-15\circ}\text{C}$ (**Exact**) |
+| **Standard (1,000 cases, $N=80$)** | 1 | 1.81 ms | $1.00\times$ | 100.0% | $0.0000 \times 10^{-15\circ}\text{C}$ (**Exact**) |
+| Standard (1,000 cases, $N=80$) | 2 | 1.12 ms | $1.62\times$ | 80.8% | $0.0000 \times 10^{-15\circ}\text{C}$ (**Exact**) |
+| Standard (1,000 cases, $N=80$) | 4 | 0.70 ms | **$2.57\times$** | 64.3% | $0.0000 \times 10^{-15\circ}\text{C}$ (**Exact**) |
+| **Extended (10,000 cases, $N=80$)** | 1 | 18.95 ms | $1.00\times$ | 100.0% | $0.0000 \times 10^{-15\circ}\text{C}$ (**Exact**) |
+| Extended (10,000 cases, $N=80$) | 2 | 11.11 ms | **$1.71\times$** | **85.3%** | $0.0000 \times 10^{-15\circ}\text{C}$ (**Exact**) |
+| Extended (10,000 cases, $N=80$) | 4 | 6.11 ms | **$3.10\times$** | **77.6%** | $0.0000 \times 10^{-15\circ}\text{C}$ (**Exact**) |
+| Extended (10,000 cases, $N=80$) | 8 | 4.35 ms | **$4.36\times$** | **54.4%** | $0.0000 \times 10^{-15\circ}\text{C}$ (**Exact**) |
 
 ---
 

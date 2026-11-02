@@ -23,14 +23,23 @@ PerformanceView::PerformanceView(QWidget *parent)
 }
 
 PerformanceView::~PerformanceView() {
-    if (m_worker) {
-        if (m_worker->isRunning()) {
-            m_worker->requestInterruption();
-            m_worker->wait(3000);
-        }
-        delete m_worker;
-        m_worker = nullptr;
+    cleanupWorker();
+}
+
+void PerformanceView::cleanupWorker() {
+    if (m_worker && m_worker->isRunning()) {
+        // Signal the benchmark engine to stop between repetitions
+        m_cancelRequested.store(true, std::memory_order_relaxed);
+        // Disconnect signals so no queued slots fire on a partially destroyed widget
+        m_worker->disconnect(this);
+        // Wait indefinitely for the worker to observe cancellation and exit cleanly.
+        // The cancellation check runs between every repetition (~5 checks per worker
+        // configuration), so the wait is at most one repetition duration.
+        m_worker->wait();
     }
+    delete m_worker;
+    m_worker = nullptr;
+    m_cancelRequested.store(false, std::memory_order_relaxed);
 }
 
 void PerformanceView::setupUi() {
@@ -74,10 +83,19 @@ void PerformanceView::setupUi() {
     leftLayout->addWidget(m_sysInfoLabel);
 
     // 3. Execution Buttons & Progress Bar
+    auto *btnRow = new QHBoxLayout();
     m_runBtn = new QPushButton("Execute Parallel Benchmark", leftPanel);
     m_runBtn->setStyleSheet("padding: 7px; font-weight: bold; font-size: 13px;");
     connect(m_runBtn, &QPushButton::clicked, this, &PerformanceView::onRunBenchmarkClicked);
-    leftLayout->addWidget(m_runBtn);
+    btnRow->addWidget(m_runBtn, 3);
+
+    m_cancelBtn = new QPushButton("Cancel", leftPanel);
+    m_cancelBtn->setEnabled(false);
+    m_cancelBtn->setStyleSheet("padding: 7px; font-size: 13px;");
+    connect(m_cancelBtn, &QPushButton::clicked, this, &PerformanceView::onCancelBenchmarkClicked);
+    btnRow->addWidget(m_cancelBtn, 1);
+
+    leftLayout->addLayout(btnRow);
 
     m_progressBar = new QProgressBar(leftPanel);
     m_progressBar->setRange(0, 100);
@@ -121,7 +139,9 @@ void PerformanceView::onRunBenchmarkClicked() {
         return; // Already running
     }
 
+    m_cancelRequested.store(false, std::memory_order_relaxed);
     m_runBtn->setEnabled(false);
+    m_cancelBtn->setEnabled(true);
     m_exportBtn->setEnabled(false);
     m_progressBar->setRange(0, 0); // Indeterminate marquee animation
     m_statusLabel->setText("Running parallel benchmark in background worker...");
@@ -135,10 +155,19 @@ void PerformanceView::onRunBenchmarkClicked() {
         m_worker = nullptr;
     }
 
-    m_worker = new BenchmarkWorker(cases, elements, {1, 2, 4}, reps, 42, this);
+    m_worker = new BenchmarkWorker(cases, elements, {1, 2, 4}, reps, 42, &m_cancelRequested, this);
     connect(m_worker, &BenchmarkWorker::benchmarkFinished, this, &PerformanceView::onBenchmarkCompleted);
     connect(m_worker, &BenchmarkWorker::benchmarkFailed, this, &PerformanceView::onBenchmarkFailed);
+    connect(m_worker, &BenchmarkWorker::benchmarkCancelled, this, &PerformanceView::onBenchmarkCancelled);
     m_worker->start();
+}
+
+void PerformanceView::onCancelBenchmarkClicked() {
+    if (m_worker && m_worker->isRunning()) {
+        m_cancelRequested.store(true, std::memory_order_relaxed);
+        m_cancelBtn->setEnabled(false);
+        m_statusLabel->setText("Cancellation requested — stopping after current repetition...");
+    }
 }
 
 void PerformanceView::onBenchmarkCompleted(const Core::Parallel::BenchmarkSuiteResult &res) {
@@ -149,6 +178,7 @@ void PerformanceView::onBenchmarkCompleted(const Core::Parallel::BenchmarkSuiteR
                                .arg(res.caseCount)
                                .arg(res.workerResults.size()));
     m_runBtn->setEnabled(true);
+    m_cancelBtn->setEnabled(false);
     m_exportBtn->setEnabled(true);
 
     updateUiWithResults(m_lastResult);
@@ -159,8 +189,17 @@ void PerformanceView::onBenchmarkFailed(const QString &errorMsg) {
     m_progressBar->setValue(0);
     m_statusLabel->setText("Benchmark failed.");
     m_runBtn->setEnabled(true);
+    m_cancelBtn->setEnabled(false);
 
     QMessageBox::warning(this, "Benchmark Error", QString("Benchmark execution failed:\n%1").arg(errorMsg));
+}
+
+void PerformanceView::onBenchmarkCancelled() {
+    m_progressBar->setRange(0, 100);
+    m_progressBar->setValue(0);
+    m_statusLabel->setText("Benchmark cancelled by user.");
+    m_runBtn->setEnabled(true);
+    m_cancelBtn->setEnabled(false);
 }
 
 void PerformanceView::updateUiWithResults(const Core::Parallel::BenchmarkSuiteResult &res) {

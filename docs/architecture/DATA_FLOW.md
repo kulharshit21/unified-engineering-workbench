@@ -25,11 +25,11 @@ flowchart TD
         M_CLOUD["TemperatureDataset<br/>std::vector<TemperatureNode><br/>minTemp, maxTemp, span"]
     end
 
-    subgraph RenderEngine ["OpenGLViewport (QOpenGLWidget)"]
+    subgraph RenderEngine ["OpenGLViewport (QWidget + QPainter 3D)"]
         CAM["Camera Transform Matrix<br/>LookAt, Perspective, Orbit/Pan"]
         TRI_SORT["Painter's Depth Sorting<br/>std::sort by camera distance"]
         COLOR["Turbo / Jet Colormapper<br/>Normalized t = (T - Tmin)/(Tmax - Tmin)<br/>RGB polynomial evaluation"]
-        DRAW["Hardware-Accelerated Render<br/>- Shaded geometry facets<br/>- Scalar-colored point cloud<br/>- Cartesian tripod overlay<br/>- Legend & temperature scale"]
+        DRAW["Antialiased 3D Projection Render<br/>- Shaded geometry facets<br/>- Scalar-colored point cloud<br/>- Cartesian tripod overlay<br/>- Legend & temperature scale"]
     end
 
     F_STL --> P_STL --> M_MESH --> CAM --> TRI_SORT --> DRAW
